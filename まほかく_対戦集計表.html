@@ -1,0 +1,1834 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>✨ まほかく 対戦集計表</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap');
+:root {
+  --dark1:#0e0720; --dark2:#1a0d38; --pur1:#3d1a6e; --pur2:#6b35b8; --pur3:#9b6fd4;
+  --gold:#ffd700; --gold2:#ffb800; --red:#c62828; --blue:#1565c0; --green:#2e7d32;
+  --cream:#faf8ff; --shadow:0 4px 24px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Noto Sans JP',Arial,sans-serif;background:linear-gradient(135deg,#0e0720,#1a0d38 40%,#220e50 70%,#0e0720);min-height:100vh;padding:20px;color:#222;}
+body::before{content:'';position:fixed;inset:0;z-index:0;background-image:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 5L35 20L50 20L38 30L43 45L30 36L17 45L22 30L10 20L25 20Z' fill='none' stroke='%23ffffff06' stroke-width='1'/%3E%3C/svg%3E");pointer-events:none;}
+.wrapper{position:relative;z-index:1;max-width:1400px;margin:0 auto;}
+
+/* ─ Header ─ */
+.header{background:linear-gradient(135deg,#1a0d38,#3d1a6e 50%,#1a0d38);border:2px solid var(--gold);border-radius:16px;padding:18px 26px;margin-bottom:20px;box-shadow:var(--shadow),0 0 50px rgba(107,53,184,.25);display:flex;align-items:center;gap:16px;flex-wrap:wrap;}
+.header-icon{font-size:2.2rem;filter:drop-shadow(0 0 10px rgba(255,215,0,.5));}
+.header-text h1{font-size:1.6rem;font-weight:900;color:var(--gold);text-shadow:0 2px 12px rgba(255,215,0,.4);}
+.header-text p{color:#c4a8f0;font-size:.8rem;margin-top:3px;}
+.header-meta{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+.meta-box{background:rgba(0,0,0,.35);border:1px solid var(--gold);border-radius:8px;padding:6px 12px;text-align:center;}
+.meta-box label{display:block;font-size:.68rem;color:#c4a8f0;}
+.meta-box .meta-val{color:var(--gold);font-size:1.05rem;font-weight:900;}
+.meta-box input{background:transparent;border:none;color:var(--gold);font-size:1rem;font-weight:700;font-family:inherit;width:60px;text-align:center;outline:none;}
+
+/* ─ Tabs ─ */
+.group-tabs{display:flex;gap:0;margin-bottom:20px;border-radius:12px;overflow:hidden;box-shadow:var(--shadow);}
+.group-tab{flex:1;padding:12px 8px;text-align:center;font-weight:900;font-size:.9rem;cursor:pointer;transition:all .2s;border:none;font-family:inherit;background:rgba(0,0,0,.35);color:rgba(255,255,255,.5);}
+.group-tab:hover{background:rgba(107,53,184,.35);color:#fff;}
+.group-tab.active{color:#fff;}
+.tab-aux{flex:0 0 auto;padding:12px 14px;border:none;font-family:inherit;font-weight:700;cursor:pointer;transition:all .2s;}
+.tab-add{background:rgba(255,215,0,.12);color:var(--gold);font-size:1.2rem;}
+.tab-add:hover{background:rgba(255,215,0,.25);}
+.tab-del{background:rgba(198,40,40,.15);color:#ff8080;font-size:1rem;}
+.tab-del:hover{background:rgba(198,40,40,.3);}
+
+/* ─ Cards ─ */
+.card{background:var(--cream);border-radius:14px;box-shadow:var(--shadow);overflow:hidden;margin-bottom:20px;}
+.card-header{background:linear-gradient(90deg,var(--dark2),var(--pur1));color:var(--gold);font-size:.97rem;font-weight:700;padding:10px 18px;display:flex;align-items:center;gap:8px;border-left:5px solid var(--gold);}
+.card-body{padding:18px;}
+
+/* ─ Player Pool ─ */
+.pool-layout{display:flex;gap:20px;flex-wrap:wrap;}
+.pool-panel{flex:1;min-width:240px;}
+.pool-panel h3{font-size:.82rem;font-weight:700;color:var(--pur2);margin-bottom:10px;}
+.pool-chips{display:flex;flex-wrap:wrap;gap:6px;min-height:48px;background:#f5f0ff;border-radius:8px;padding:8px;border:2px dashed #d8c8f0;}
+.pool-chip{display:inline-flex;align-items:center;gap:5px;padding:5px 10px 5px 12px;border-radius:20px;font-size:.82rem;font-weight:700;color:#fff;cursor:grab;user-select:none;transition:transform .15s,box-shadow .15s;}
+.pool-chip:hover{transform:scale(1.05);box-shadow:0 3px 10px rgba(0,0,0,.2);}
+.pool-chip:active{cursor:grabbing;}
+.pool-chip .chip-del{background:rgba(255,255,255,.3);border:none;color:#fff;border-radius:50%;width:16px;height:16px;font-size:.65rem;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:900;padding:0;flex-shrink:0;}
+.pool-chip .chip-del:hover{background:rgba(255,255,255,.5);}
+.pool-add-row{display:flex;gap:6px;margin-top:10px;}
+.pool-add-input{flex:1;padding:7px 10px;border:2px solid #d8c8f0;border-radius:8px;font-size:.84rem;font-family:inherit;}
+.pool-add-input:focus{outline:none;border-color:var(--pur2);}
+
+.slots-panel{flex:0 0 auto;width:220px;}
+.slots-panel h3{font-size:.82rem;font-weight:700;color:var(--pur2);margin-bottom:10px;}
+.slot-item{display:flex;align-items:center;gap:8px;padding:7px 10px;border:2px dashed #d8c8f0;border-radius:8px;margin-bottom:7px;min-height:42px;transition:all .2s;}
+.slot-item.has-player{border-style:solid;border-color:var(--pur2);background:#f0eaff;}
+.slot-item.drag-over{border-color:var(--gold);background:rgba(255,215,0,.1);}
+.slot-num{width:22px;font-size:.7rem;color:#888;flex-shrink:0;font-weight:700;}
+.slot-name{flex:1;font-weight:700;font-size:.88rem;}
+.slot-name.empty{color:#ccc;font-weight:400;font-style:italic;font-size:.82rem;}
+.slot-clr{background:none;border:none;color:#c62828;cursor:pointer;font-size:.9rem;padding:2px 4px;border-radius:4px;transition:background .15s;}
+.slot-clr:hover{background:#ffeaea;}
+
+/* ─ Round bar ─ */
+.round-bar{background:rgba(107,53,184,.1);border:1.5px solid rgba(107,53,184,.35);border-radius:10px;padding:11px 16px;margin-bottom:16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.round-label{color:var(--pur2);font-weight:700;font-size:.9rem;white-space:nowrap;}
+.round-btn{padding:5px 13px;border-radius:20px;border:2px solid rgba(107,53,184,.4);background:transparent;color:var(--pur2);font-weight:700;font-size:.8rem;cursor:pointer;font-family:inherit;transition:all .18s;position:relative;}
+.round-btn:hover{background:rgba(107,53,184,.15);}
+.round-btn.active{background:var(--pur2);color:#fff;border-color:var(--pur2);}
+.round-btn.confirmed-round::after{content:'🔒';font-size:.65rem;margin-left:3px;}
+.round-add-btn{padding:5px 12px;border-radius:20px;border:2px solid rgba(255,215,0,.5);background:rgba(255,215,0,.1);color:var(--gold);font-weight:700;font-size:.8rem;cursor:pointer;font-family:inherit;transition:all .18s;}
+.round-add-btn:hover{background:rgba(255,215,0,.25);}
+.round-del-btn{padding:5px 10px;border-radius:20px;border:2px solid rgba(198,40,40,.4);background:transparent;color:var(--red);font-weight:700;font-size:.78rem;cursor:pointer;font-family:inherit;transition:all .18s;}
+.round-del-btn:hover{background:rgba(198,40,40,.1);}
+.round-progress{font-size:.76rem;color:#888;margin-left:auto;}
+
+/* ─ Confirm button ─ */
+.confirm-strip{display:flex;align-items:center;gap:12px;background:linear-gradient(90deg,rgba(46,125,50,.15),rgba(46,125,50,.05));border:2px solid rgba(46,125,50,.5);border-radius:10px;padding:12px 18px;margin-bottom:16px;flex-wrap:wrap;}
+.confirm-strip.confirmed{background:linear-gradient(90deg,rgba(21,101,192,.12),rgba(21,101,192,.04));border-color:rgba(21,101,192,.45);}
+.confirm-msg{flex:1;font-size:.88rem;font-weight:700;color:#2e7d32;}
+.confirm-msg.confirmed-msg{color:var(--blue);}
+.btn-confirm{padding:9px 20px;border:none;border-radius:8px;background:linear-gradient(135deg,#2e7d32,#43a047);color:#fff;font-weight:900;font-size:.88rem;cursor:pointer;font-family:inherit;box-shadow:0 3px 10px rgba(46,125,50,.35);transition:all .2s;}
+.btn-confirm:hover{transform:translateY(-1px);box-shadow:0 5px 16px rgba(46,125,50,.4);}
+.btn-unconfirm{padding:7px 14px;border:2px solid rgba(198,40,40,.4);border-radius:8px;background:transparent;color:var(--red);font-weight:700;font-size:.78rem;cursor:pointer;font-family:inherit;transition:all .2s;}
+.btn-unconfirm:hover{background:rgba(198,40,40,.08);}
+
+/* ─ Matrix ─ */
+.matrix-wrap{overflow-x:auto;}
+.rr-table{border-collapse:collapse;font-size:.81rem;min-width:400px;}
+.rr-table th{background:linear-gradient(135deg,var(--dark2),var(--pur1));color:#e0d4ff;padding:8px 6px;text-align:center;border:1px solid rgba(255,255,255,.08);font-size:.73rem;white-space:nowrap;}
+.rr-table td{border:1px solid #e0d4f8;padding:0;}
+.rr-cell{min-width:72px;height:54px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:background .15s;font-size:.78rem;}
+.rr-cell:hover{background:rgba(107,53,184,.1);}
+.rr-cell.self{background:#1e1e2e!important;cursor:default;}
+.rr-cell.win{background:rgba(21,101,192,.1);}
+.rr-cell.lose{background:rgba(198,40,40,.07);}
+.rr-cell.locked{cursor:default;}
+.rr-cell.locked:hover{background:inherit;}
+.rr-score{font-weight:900;font-size:.92rem;}
+.rr-score.w{color:var(--blue);}
+.rr-score.l{color:var(--red);}
+.rr-score.pend{color:#ccc;font-size:.72rem;font-weight:400;}
+.rr-games{font-size:.65rem;color:#aaa;margin-top:1px;}
+.row-name{background:#fff!important;font-weight:700;padding:6px 12px;text-align:left!important;white-space:nowrap;}
+
+/* ─ Standings ─ */
+.standings-table{width:100%;border-collapse:collapse;font-size:.82rem;}
+.standings-table th{background:linear-gradient(135deg,var(--dark2),var(--pur1));color:#e0d4ff;padding:8px 6px;text-align:center;border:1px solid rgba(255,255,255,.08);font-size:.73rem;}
+.standings-table td{border:1px solid #e0d4f8;padding:7px 6px;text-align:center;vertical-align:middle;}
+.standings-table tr:nth-child(even) td{background:#f5f0ff;}
+.standings-table tr:nth-child(odd) td{background:#fff;}
+.standings-table tr:hover td{background:#ede5ff!important;}
+.standings-table tr.top1 td{background:linear-gradient(90deg,rgba(210,155,10,.28),rgba(245,205,50,.38))!important;color:var(--dark1);font-weight:700;}
+.standings-table tr.top2 td{background:linear-gradient(90deg,rgba(210,155,10,.18),rgba(245,205,50,.26))!important;color:var(--dark1);font-weight:700;}
+.td-name{text-align:left!important;padding-left:12px!important;font-weight:700;}
+.rank-badge{display:inline-block;width:24px;height:24px;border-radius:50%;line-height:24px;text-align:center;font-size:.72rem;font-weight:900;background:#ede5ff;color:var(--pur2);}
+.rank-badge.r1{background:linear-gradient(135deg,#b87c00,#f0c840);color:#fff;}
+.rank-badge.r2{background:linear-gradient(135deg,#9a7c00,#d4a820);color:#fff;}
+.color-dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;vertical-align:middle;}
+.pos{color:var(--blue);font-weight:700;}
+.neg{color:var(--red);font-weight:700;}
+.stat-bar{height:5px;background:#ede5ff;border-radius:3px;margin-top:3px;overflow:hidden;}
+.stat-fill-s{height:100%;background:linear-gradient(90deg,#2e7d32,#43a047);border-radius:3px;transition:width .6s;}
+.stat-fill-g{height:100%;background:linear-gradient(90deg,var(--pur2),#40c8e0);border-radius:3px;transition:width .6s;}
+.stat-dual{display:flex;flex-direction:column;gap:2px;min-width:88px;text-align:left;}
+.stat-row{display:flex;align-items:center;gap:4px;font-size:.73rem;}
+.stat-label{font-size:.65rem;color:#aaa;width:20px;flex-shrink:0;}
+
+/* ─ Ranking cards ─ */
+.ranking-row{display:flex;gap:10px;flex-wrap:wrap;}
+.rank-card{flex:1;min-width:100px;max-width:155px;border-radius:12px;padding:12px;text-align:center;transition:transform .2s;}
+.rank-card:hover{transform:translateY(-4px);}
+.rank-1{background:linear-gradient(135deg,#3d1f00,#d4920f 45%,#ffe066);color:#fff;box-shadow:0 6px 32px rgba(255,200,30,.7);animation:pulse-gold 2.4s ease-in-out infinite;}
+@keyframes pulse-gold{0%,100%{box-shadow:0 6px 32px rgba(255,200,30,.7),0 0 0 0 rgba(255,215,0,0)}50%{box-shadow:0 6px 32px rgba(255,200,30,.7),0 0 0 12px rgba(255,215,0,0)}}
+.rank-2{background:linear-gradient(135deg,#0d2a4a,#1a6fc4 55%,#56b4f5);color:#fff;box-shadow:0 4px 20px rgba(30,120,220,.55);animation:pulse-silver 2.8s ease-in-out infinite;}
+@keyframes pulse-silver{0%,100%{box-shadow:0 4px 20px rgba(30,120,220,.55)}50%{box-shadow:0 4px 26px rgba(30,120,220,.85)}}
+.rank-other{background:linear-gradient(135deg,var(--pur1),var(--pur2));color:#fff;box-shadow:var(--shadow);}
+.rank-top8{background:linear-gradient(135deg,#0d3320,#1a6640 55%,#2ea855);color:#fff;box-shadow:0 4px 16px rgba(30,160,80,.4);}
+.rank-border-line{width:100%;text-align:center;font-size:.72rem;color:rgba(255,120,120,.9);padding:5px 0 3px;border-top:2px dashed rgba(255,100,100,.55);margin-top:6px;letter-spacing:.08em;font-weight:700;}
+.rank-medal{font-size:1.8rem;display:block;filter:drop-shadow(0 2px 6px rgba(0,0,0,.35));}
+.rank-name{font-size:.86rem;font-weight:700;margin:4px 0;}
+.rank-pt{font-size:1.05rem;font-weight:900;}
+.rank-sub{font-size:.67rem;opacity:.82;margin-top:3px;}
+
+/* ─ Charts ─ */
+.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+@media(max-width:700px){.charts-grid{grid-template-columns:1fr;}}
+.chart-box{background:#fff;border-radius:10px;padding:14px;box-shadow:0 2px 8px rgba(0,0,0,.07);border:1px solid #e0d4f8;}
+.chart-box h3{font-size:.84rem;font-weight:700;color:var(--pur1);margin-bottom:10px;padding-bottom:7px;border-bottom:2px solid #ede5ff;}
+
+/* ─ Buttons ─ */
+.btn{padding:8px 16px;border:none;border-radius:8px;font-family:inherit;font-size:.83rem;font-weight:700;cursor:pointer;transition:all .2s;box-shadow:0 2px 8px rgba(0,0,0,.12);}
+.btn:active{transform:translateY(1px)!important;}
+.btn-primary{background:var(--pur2);color:#fff;}
+.btn-primary:hover{background:var(--pur1);transform:translateY(-1px);}
+.btn-gold{background:var(--gold);color:var(--dark1);}
+.btn-gold:hover{background:var(--gold2);transform:translateY(-1px);}
+.btn-danger{background:var(--red);color:#fff;}
+.btn-danger:hover{opacity:.85;transform:translateY(-1px);}
+.btn-sm{padding:5px 11px;font-size:.75rem;}
+.btn-outline{background:transparent;border:2px solid var(--pur3);color:var(--pur2);}
+.btn-outline:hover{background:rgba(107,53,184,.1);}
+
+/* ─ Data bar ─ */
+.data-bar{background:rgba(0,0,0,.22);border:1px solid rgba(255,215,0,.15);border-radius:10px;padding:10px 16px;margin-bottom:20px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.data-bar-label{color:rgba(255,215,0,.7);font-size:.78rem;font-weight:600;}
+.data-bar-info{color:rgba(255,255,255,.4);font-size:.73rem;margin-left:auto;}
+#gh-sync-status{font-size:.74rem;font-weight:700;margin-left:4px;flex-shrink:0;}
+
+/* ─ Save indicator ─ */
+#save-indicator{position:fixed;bottom:20px;right:20px;z-index:9999;background:rgba(26,13,56,.92);border:1.5px solid var(--gold);border-radius:24px;padding:7px 16px;display:flex;align-items:center;gap:8px;font-size:.8rem;color:#c4a8f0;font-weight:600;backdrop-filter:blur(6px);transition:opacity .4s,transform .4s;opacity:0;transform:translateY(8px);pointer-events:none;}
+#save-indicator.show{opacity:1;transform:translateY(0);}
+#save-indicator .dot{width:8px;height:8px;border-radius:50%;background:var(--gold);}
+
+/* ─ Modal ─ */
+.modal-overlay{position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.65);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:20px;}
+.modal-overlay.hidden{display:none;}
+.modal{background:#fff;border-radius:16px;padding:24px;max-width:460px;width:100%;box-shadow:0 8px 40px rgba(0,0,0,.4);border:2px solid #d8c8f0;}
+.modal h2{font-size:1.05rem;font-weight:900;color:var(--pur1);margin-bottom:14px;text-align:center;}
+.modal-players{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:16px;flex-wrap:wrap;}
+.modal-player{font-size:1rem;font-weight:700;}
+.modal-vs{font-size:1.3rem;font-weight:900;color:var(--pur3);}
+.bo3-row{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;justify-content:center;}
+.game-block{display:flex;flex-direction:column;align-items:center;gap:5px;}
+.game-block-label{font-size:.7rem;font-weight:700;color:#888;}
+.game-btns{display:flex;gap:5px;}
+.game-btn{padding:7px 12px;border-radius:8px;border:2px solid #d8c8f0;font-size:.8rem;font-weight:700;cursor:pointer;font-family:inherit;transition:all .18s;background:#f5f0ff;color:var(--pur2);}
+.game-btn:hover{border-color:var(--pur2);transform:translateY(-1px);}
+.game-btn.act-p1{background:var(--blue);color:#fff;border-color:var(--blue);}
+.game-btn.act-p2{background:var(--red);color:#fff;border-color:var(--red);}
+.game-btn.dis{opacity:.3;pointer-events:none;}
+.result-preview{text-align:center;margin-bottom:14px;font-size:.9rem;font-weight:700;padding:10px;background:#f5f0ff;border-radius:8px;color:var(--pur2);min-height:38px;}
+.result-preview.wp1{background:#e3f0ff;color:var(--blue);}
+.result-preview.wp2{background:#ffeaea;color:var(--red);}
+.modal-footer{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;}
+
+.empty-state{text-align:center;color:#bbb;padding:20px 0;font-size:.85rem;}
+.table-scroll{overflow-x:auto;}
+.footer{text-align:center;color:rgba(255,255,255,.28);font-size:.72rem;margin-top:18px;padding-bottom:10px;}
+
+/* ─ Tournament Bracket ─ */
+.tourney-wrap{background:#06111f;border-radius:14px;padding:22px;overflow-x:auto;box-shadow:var(--shadow);border:2px solid rgba(255,215,0,.2);}
+.tourney-section-label{color:var(--gold);font-size:.72rem;font-weight:900;letter-spacing:3px;text-align:center;padding:5px 0 12px;text-transform:uppercase;}
+.bracket-flow{display:flex;align-items:flex-start;gap:0;min-width:900px;}
+.b-col{display:flex;flex-direction:column;align-items:center;flex:1;min-width:140px;}
+.b-col-hdr{color:var(--gold);font-size:.68rem;font-weight:900;letter-spacing:1.5px;text-align:center;padding:6px 8px;border-bottom:2px solid rgba(255,215,0,.4);width:100%;text-align:center;margin-bottom:10px;}
+.b-spacer{flex:1;}
+.b-match-wrap{display:flex;align-items:center;width:100%;}
+.b-match{background:#0d1e36;border:1.5px solid rgba(255,255,255,.1);border-radius:7px;margin:5px 6px;width:100%;overflow:hidden;box-shadow:0 3px 12px rgba(0,0,0,.4);}
+.b-match-num{font-size:.6rem;color:rgba(255,215,0,.5);padding:3px 8px 2px;border-bottom:1px solid rgba(255,255,255,.06);font-weight:700;}
+.b-slot{padding:7px 10px;font-size:.8rem;font-weight:700;color:#fff;display:flex;align-items:center;gap:6px;min-height:34px;border-left:3px solid transparent;transition:all .15s;}
+.b-slot.ub-color{background:rgba(21,101,192,.55);border-left-color:#1565c0;}
+.b-slot.lb-color{background:rgba(198,40,40,.55);border-left-color:#c62828;}
+.b-slot.win-color{background:rgba(46,125,50,.7);border-left-color:#2e7d32;}
+.b-slot.tbd-slot{background:rgba(255,255,255,.04);color:rgba(255,255,255,.25);font-style:italic;font-size:.72rem;font-weight:400;}
+.b-slot.clickable{cursor:pointer;}
+.b-slot.clickable:hover{filter:brightness(1.2);}
+.b-slot-sep{height:1px;background:rgba(255,255,255,.07);margin:0;}
+.b-conn{width:18px;flex-shrink:0;}
+.b-gf-box{background:#0d1e36;border:2px solid var(--gold);border-radius:10px;padding:4px 6px;margin:5px 6px;box-shadow:0 0 20px rgba(255,215,0,.15);}
+.b-gf-hdr{color:var(--gold);font-size:.65rem;font-weight:900;text-align:center;padding:4px;border-bottom:1px solid rgba(255,215,0,.3);letter-spacing:1px;}
+.b-br-box{background:#0d1e36;border:2px dashed rgba(255,215,0,.4);border-radius:10px;padding:4px 6px;margin:5px 6px;}
+.b-br-hdr{color:rgba(255,215,0,.6);font-size:.6rem;font-weight:900;text-align:center;padding:4px;border-bottom:1px solid rgba(255,215,0,.2);letter-spacing:1px;}
+.lb-divider{width:100%;height:2px;background:linear-gradient(90deg,transparent,rgba(198,40,40,.4) 20%,rgba(198,40,40,.4) 80%,transparent);margin:14px 0;}
+.tourney-players-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px;}
+.t-seed-box{background:#0d1e36;border:1.5px solid rgba(255,255,255,.12);border-radius:8px;padding:8px 10px;display:flex;align-items:center;gap:8px;}
+.t-seed-num{color:var(--gold);font-size:.72rem;font-weight:900;width:22px;flex-shrink:0;}
+.t-seed-input{background:transparent;border:none;color:#fff;font-size:.84rem;font-weight:700;font-family:inherit;flex:1;outline:none;}
+.t-seed-input::placeholder{color:rgba(255,255,255,.25);font-weight:400;}
+.tourney-toolbar{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center;}
+.tourney-status{font-size:.78rem;color:rgba(255,255,255,.45);margin-left:auto;}
+.champion-banner{background:linear-gradient(90deg,#c8900e,#f0c840 50%,#c8900e);border-radius:12px;padding:16px;text-align:center;margin-bottom:14px;animation:pulse-gold 2.8s ease-in-out infinite;}
+.champion-banner .ch-title{font-size:.75rem;letter-spacing:3px;color:rgba(255,255,255,.8);font-weight:700;}
+.champion-banner .ch-name{font-size:1.6rem;font-weight:900;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.4);}
+.t-result-modal{position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:20px;}
+.t-result-modal.hidden{display:none;}
+.t-result-inner{background:#0d1e36;border:2px solid rgba(255,215,0,.5);border-radius:14px;padding:24px;max-width:360px;width:100%;text-align:center;}
+.t-result-inner h3{color:var(--gold);font-weight:900;font-size:1rem;margin-bottom:16px;}
+.t-result-btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:12px;}
+.t-pick-btn{padding:10px 18px;border-radius:8px;border:2px solid rgba(255,255,255,.2);font-size:.9rem;font-weight:700;color:#fff;cursor:pointer;font-family:inherit;transition:all .2s;min-width:110px;}
+.t-pick-btn:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.3);}
+.t-pick-btn.p1c{background:#1565c0;border-color:#1976d2;}
+.t-pick-btn.p2c{background:#c62828;border-color:#d32f2f;}
+
+/* Confirmed archive */
+.archive-list{display:flex;flex-direction:column;gap:10px;}
+.archive-item{background:#fff;border:2px solid #d8c8f0;border-radius:10px;padding:12px 16px;}
+.archive-item-header{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.archive-badge{background:var(--pur2);color:#fff;border-radius:6px;padding:3px 10px;font-size:.75rem;font-weight:700;}
+.archive-ts{font-size:.72rem;color:#aaa;}
+
+/* ════════════ MOBILE / RESPONSIVE ════════════ */
+@media(max-width:768px){
+  body{padding:10px;}
+
+  /* ─ Header ─ */
+  .header{padding:12px 14px;gap:10px;}
+  .header-icon{font-size:1.6rem;}
+  .header-text h1{font-size:1.15rem;}
+  .header-text p{font-size:.75rem;}
+  .header-meta{margin-left:0;width:100%;justify-content:flex-start;}
+  .meta-box{padding:5px 10px;}
+  .meta-box .meta-val{font-size:.9rem;}
+  .meta-box input{width:50px;font-size:.9rem;}
+
+  /* ─ Tabs: 横スクロール ─ */
+  .group-tabs{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;
+    scrollbar-width:none;border-radius:10px;}
+  .group-tabs::-webkit-scrollbar{display:none;}
+  .group-tab{white-space:nowrap;font-size:.75rem;padding:10px 10px;flex:0 0 auto;}
+  .tab-aux{flex:0 0 auto;}
+
+  /* ─ Cards ─ */
+  .card-header{font-size:.88rem;padding:9px 14px;}
+  .card-body{padding:12px;}
+
+  /* ─ Player pool ─ */
+  .pool-layout{flex-direction:column;}
+  .slots-panel{width:100%;}
+  .pool-chip{font-size:.78rem;padding:4px 9px 4px 10px;}
+  .pool-add-input{font-size:.84rem;}
+
+  /* ─ Slot items ─ */
+  .slot-item{padding:6px 8px;min-height:40px;}
+  .slot-name{font-size:.84rem;}
+
+  /* ─ Round bar ─ */
+  .round-bar{gap:7px;padding:9px 12px;}
+  .round-progress{font-size:.7rem;width:100%;margin-left:0;}
+
+  /* ─ Confirm strip ─ */
+  .confirm-strip{padding:10px 12px;gap:8px;flex-direction:column;align-items:flex-start;}
+  .confirm-msg{font-size:.82rem;}
+  .btn-confirm{padding:8px 16px;font-size:.82rem;width:100%;}
+  .btn-unconfirm{font-size:.75rem;}
+
+  /* ─ Matrix (総当たり表) ─ */
+  .matrix-wrap{-webkit-overflow-scrolling:touch;}
+  .rr-cell{min-width:52px;height:44px;}
+  .rr-score{font-size:.82rem;}
+  .rr-games{font-size:.58rem;}
+  .rr-table th{font-size:.65rem;padding:6px 4px;}
+  .row-name{padding:5px 8px;font-size:.74rem;}
+
+  /* ─ Standings (順位表) ─ */
+  .standings-table{font-size:.77rem;}
+  .standings-table th{font-size:.67rem;padding:6px 3px;}
+  .standings-table td{padding:6px 3px;}
+  .td-name{padding-left:8px!important;}
+  .stat-dual{min-width:68px;}
+  .stat-row{gap:3px;}
+
+  /* ─ Ranking cards ─ */
+  .ranking-row{gap:7px;}
+  .rank-card{min-width:85px;max-width:130px;padding:10px 8px;}
+  .rank-medal{font-size:1.4rem;}
+  .rank-name{font-size:.78rem;}
+  .rank-pt{font-size:.9rem;}
+  .rank-sub{font-size:.62rem;}
+
+  /* ─ Charts ─ */
+  .charts-grid{grid-template-columns:1fr;}
+  .chart-box{padding:12px;}
+  .chart-box h3{font-size:.78rem;}
+
+  /* ─ Data bar ─ */
+  .data-bar{gap:7px;}
+  .data-bar-info{margin-left:0;width:100%;text-align:right;}
+
+  /* ─ 対戦入力モーダル ─ */
+  .modal-overlay{padding:16px 10px;align-items:flex-end;}
+  .modal{padding:20px 16px;max-width:100%;border-radius:16px 16px 0 0;}
+  .modal h2{font-size:.95rem;margin-bottom:12px;}
+  .modal-players{gap:8px;}
+  .modal-player{font-size:.9rem;}
+  .modal-vs{font-size:1.1rem;}
+  .bo3-row{gap:10px;justify-content:center;}
+  .game-btn{padding:11px 12px;font-size:.82rem;min-width:72px;}
+  .game-block-label{font-size:.65rem;}
+  .result-preview{font-size:.84rem;padding:10px;}
+  .modal-footer{gap:8px;}
+
+  /* ─ Tournament ─ */
+  .tourney-wrap{padding:14px 12px;}
+  .tourney-section-label{font-size:.66rem;letter-spacing:2px;}
+  .tourney-players-grid{grid-template-columns:repeat(2,1fr);gap:6px;}
+  .t-seed-box{padding:6px 8px;}
+  .t-seed-input{font-size:.82rem;}
+  .tourney-toolbar{gap:6px;}
+  .tourney-status{font-size:.7rem;}
+  .champion-banner{padding:14px;}
+  .champion-banner .ch-name{font-size:1.3rem;}
+
+  /* ─ トーナメント結果入力モーダル ─ */
+  .t-result-modal{padding:16px 10px;align-items:flex-end;}
+  .t-result-inner{padding:20px 16px;max-width:100%;border-radius:14px 14px 0 0;}
+  .t-result-inner h3{font-size:.92rem;margin-bottom:12px;}
+  #t-score-btns{gap:8px;}
+  .t-score-btn{padding:12px 8px;font-size:.9rem;}
+  .t-cancel-btn{padding:9px;font-size:.8rem;}
+}
+
+/* ────── 480px 以下 (小型スマホ) ────── */
+@media(max-width:480px){
+  body{padding:8px;}
+
+  /* ─ Header ─ */
+  .header{padding:10px 12px;gap:8px;}
+  .header-icon{font-size:1.35rem;}
+  .header-text h1{font-size:.97rem;}
+  .header-text p{font-size:.68rem;}
+  .meta-box{padding:4px 8px;}
+  .meta-box label{font-size:.58rem;}
+  .meta-box .meta-val{font-size:.82rem;}
+  .meta-box input{width:44px;font-size:.82rem;}
+
+  /* ─ Tabs ─ */
+  .group-tab{font-size:.7rem;padding:9px 8px;}
+
+  /* ─ Cards ─ */
+  .card-header{font-size:.82rem;padding:8px 12px;gap:6px;}
+  .card-body{padding:10px;}
+
+  /* ─ Matrix ─ */
+  .rr-cell{min-width:44px;height:38px;}
+  .rr-score{font-size:.76rem;}
+  .rr-games{font-size:.55rem;}
+  .rr-table th{font-size:.58rem;padding:5px 3px;}
+  .row-name{padding:4px 6px;font-size:.68rem;}
+
+  /* ─ Standings ─ */
+  .standings-table{font-size:.72rem;}
+  .standings-table th{font-size:.62rem;padding:5px 2px;}
+  .standings-table td{padding:5px 2px;}
+  .stat-dual{min-width:62px;}
+  .stat-label{font-size:.6rem;}
+
+  /* ─ Ranking cards ─ */
+  .ranking-row{gap:6px;}
+  .rank-card{min-width:76px;max-width:110px;padding:8px 6px;}
+  .rank-medal{font-size:1.2rem;}
+  .rank-name{font-size:.72rem;}
+  .rank-pt{font-size:.82rem;}
+  .rank-sub{font-size:.6rem;}
+
+  /* ─ 対戦入力モーダル ─ */
+  .game-btn{padding:11px 8px;font-size:.76rem;min-width:64px;}
+  .result-preview{font-size:.8rem;}
+
+  /* ─ Tournament ─ */
+  .tourney-players-grid{grid-template-columns:repeat(2,1fr);}
+  .t-seed-input{font-size:.76rem;}
+  .tourney-status{display:none;}
+  .champion-banner .ch-name{font-size:1.15rem;}
+  .t-score-btn{padding:12px 6px;font-size:.84rem;}
+
+  /* ─ Save indicator ─ */
+  #save-indicator{bottom:14px;right:14px;padding:6px 12px;font-size:.74rem;}
+  #save-indicator .dot{width:7px;height:7px;}
+}
+
+/* ─ Tournament v2 ─ */
+.t-score-btn{padding:10px;border-radius:7px;border:2px solid rgba(255,255,255,.15);font-size:.92rem;font-weight:900;color:#fff;cursor:pointer;font-family:inherit;transition:all .18s;width:100%;}
+.t-score-btn:hover{transform:translateY(-1px);filter:brightness(1.25);}
+.ts-p1{background:rgba(21,101,192,.75);border-color:rgba(21,101,192,.9);}
+.ts-p2{background:rgba(198,40,40,.75);border-color:rgba(198,40,40,.9);}
+.t-cancel-btn{width:100%;padding:7px;border:1px solid rgba(255,255,255,.15);border-radius:7px;background:transparent;color:rgba(255,255,255,.4);font-family:inherit;cursor:pointer;font-size:.8rem;}
+.t-cancel-btn:hover{background:rgba(255,255,255,.06);}
+/* Bracket match cards v2 */
+.b-match{background:#0d1e36;border:1.5px solid rgba(255,255,255,.1);border-radius:6px;margin:3px 5px;position:relative;width:200px;flex-shrink:0;}
+.bm-gf{border-color:var(--gold)!important;box-shadow:0 0 14px rgba(255,215,0,.2);}
+.bm-br{border:1.5px dashed rgba(255,215,0,.4)!important;}
+.b-match-num{font-size:.56rem;color:rgba(255,215,0,.55);padding:2px 7px 1px;border-bottom:1px solid rgba(255,255,255,.06);letter-spacing:.5px;}
+.b-slot{padding:6px 8px;display:flex;align-items:center;min-height:35px;border-left:3px solid transparent;gap:4px;}
+.b-slot.clickable{cursor:pointer;}
+.b-slot.clickable:hover{filter:brightness(1.15);}
+.bs-ub{background:rgba(21,101,192,.80);border-left-color:#1565c0;}
+.bs-lb{background:rgba(198,40,40,.80);border-left-color:#c62828;}
+.bs-win{background:rgba(46,125,50,.72);border-left-color:#43a047;}
+.bs-lose-ub{background:rgba(21,101,192,.15);border-left-color:#1565c0;}
+.bs-lose-lb{background:rgba(198,40,40,.28);border-left-color:#c62828;}
+.bs-champ{background:linear-gradient(90deg,rgba(140,90,0,.85),rgba(200,145,10,.85));border-left-color:#f0c840;box-shadow:0 0 8px rgba(255,200,30,.5);}
+.bs-champ .b-score{background:rgba(255,215,0,.35);color:#fff;}
+.bs-champ .b-pname{color:#ffe066;}
+.bs-lose{background:rgba(15,20,40,.9);border-left-color:transparent;opacity:.5;}
+.bs-tbd{background:rgba(255,255,255,.03);border-left-color:transparent;}
+.b-pname{flex:1;font-size:.77rem;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:139px;}
+.bs-tbd .b-pname{color:rgba(255,255,255,.22);font-style:italic;font-weight:400;font-size:.7rem;}
+.bs-lose .b-pname{color:rgba(255,255,255,.35);}
+.b-score{font-size:.75rem;font-weight:900;background:rgba(255,255,255,.15);border-radius:3px;padding:0 4px;color:#fff;flex-shrink:0;min-width:18px;text-align:center;}
+.bs-win .b-score{background:rgba(255,255,255,.28);color:#fff;}
+.b-slot-sep{height:1px;background:rgba(255,255,255,.07);}
+#bracket-main{position:relative;overflow:visible;}
+#bracket-svg{position:absolute;top:0;left:0;pointer-events:none;overflow:visible;z-index:0;}
+.bracket-flow{position:relative;z-index:1;}
+
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+<div class="header">
+  <div class="header-icon">✨🃏⚔️</div>
+  <div class="header-text">
+    <h1>まほかく 対戦集計表</h1>
+    <p>1v1 BO3 × 総当たり ｜ グループ制 ｜ 複数ラウンド対応</p>
+  </div>
+  <div class="header-meta">
+    <div class="meta-box"><label>完了対戦</label><div class="meta-val" id="hd-matches">0</div></div>
+    <div class="meta-box"><label>YEAR</label><input type="number" id="meta-year" value="2026" min="2020" max="2099" style="width:58px"></div>
+    <div class="meta-box"><label>MONTH</label><input type="number" id="meta-month" value="5" min="1" max="12" style="width:44px"></div>
+  </div>
+</div>
+
+<div class="group-tabs" id="group-tabs"></div>
+<div id="group-content"></div>
+<div id="overall-section" style="display:none;">
+  <div class="card">
+    <div class="card-header">🌐 全グループ 総合ランキング</div>
+    <div class="card-body"><div class="ranking-row" id="overall-ranking"></div></div>
+  </div>
+  <div class="card">
+    <div class="card-header">📊 グループ別成績比較</div>
+    <div class="card-body">
+      <div class="charts-grid">
+        <div class="chart-box"><h3>🏅 セット勝利数</h3><canvas id="chart-ov-mw" height="220"></canvas></div>
+        <div class="chart-box"><h3>📊 セット勝率 vs 試合勝率</h3><canvas id="chart-ov-rate" height="220"></canvas></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="tourney-section" style="display:none;"></div>
+
+<!-- Tournament Result Modal -->
+<div class="t-result-modal hidden" id="t-modal">
+  <div class="t-result-inner">
+    <h3 id="t-modal-title">結果入力</h3>
+    <div style="display:flex;justify-content:center;align-items:center;gap:12px;margin-bottom:14px">
+      <span id="t-p1-name" style="color:#64b5f6;font-weight:700;font-size:.95rem">―</span>
+      <span style="color:rgba(255,255,255,.3);font-size:.75rem">vs</span>
+      <span id="t-p2-name" style="color:#ef9a9a;font-weight:700;font-size:.95rem">―</span>
+    </div>
+    <div id="t-score-btns" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px"></div>
+    <button class="t-cancel-btn" onclick="document.getElementById('t-modal').classList.add('hidden')">キャンセル</button>
+  </div>
+</div>
+
+<div class="data-bar">
+  <span class="data-bar-label">💾 データ管理</span>
+  <button class="btn btn-primary btn-sm" onclick="exportJSON()">📤 エクスポート</button>
+  <button class="btn btn-sm" style="background:#555;color:#fff;font-weight:700" onclick="document.getElementById('imp-file').click()">📥 インポート</button>
+  <input type="file" id="imp-file" accept=".json" style="display:none" onchange="importJSON(event)">
+  <button class="btn btn-danger btn-sm" onclick="clearAll()">🗑 全リセット</button>
+  <span style="color:rgba(255,215,0,.7);font-size:.75rem;font-weight:700;flex-shrink:0;">🔑 GitHub Token:</span>
+  <input type="password" id="gh-token-inline" placeholder="ghp_xxxx..." autocomplete="off"
+    style="background:rgba(255,255,255,.1);border:1.5px solid rgba(255,255,255,.2);border-radius:6px;padding:4px 10px;font-size:.75rem;font-family:inherit;color:#fff;outline:none;width:220px;flex-shrink:0;"
+    oninput="onGhTokenInput(this.value)">
+  <span id="gh-sync-status"></span>
+  <span class="data-bar-info" id="last-saved">―</span>
+</div>
+
+<div class="footer">✨ まほかく 対戦集計表 ｜ 1v1 BO3 総当たり ｜ 自動保存</div>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay hidden" id="modal">
+  <div class="modal">
+    <h2 id="modal-title">対戦結果入力</h2>
+    <div class="modal-players">
+      <span class="modal-player" id="m-p1n">―</span>
+      <span class="modal-vs">VS</span>
+      <span class="modal-player" id="m-p2n">―</span>
+    </div>
+    <div class="bo3-row">
+      <div class="game-block">
+        <div class="game-block-label">Game 1</div>
+        <div class="game-btns">
+          <button class="game-btn" id="g1p1" onclick="setG(1,0)">―</button>
+          <button class="game-btn" id="g1p2" onclick="setG(1,1)">―</button>
+        </div>
+      </div>
+      <div class="game-block">
+        <div class="game-block-label">Game 2</div>
+        <div class="game-btns">
+          <button class="game-btn" id="g2p1" onclick="setG(2,0)">―</button>
+          <button class="game-btn" id="g2p2" onclick="setG(2,1)">―</button>
+        </div>
+      </div>
+      <div class="game-block" id="g3-block">
+        <div class="game-block-label">Game 3</div>
+        <div class="game-btns">
+          <button class="game-btn" id="g3p1" onclick="setG(3,0)">―</button>
+          <button class="game-btn" id="g3p2" onclick="setG(3,1)">―</button>
+        </div>
+      </div>
+    </div>
+    <div class="result-preview" id="result-prev">ゲーム結果を入力してください</div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" id="btn-confirm-modal" onclick="confirmModal()" disabled style="opacity:.5;cursor:not-allowed">✅ 確定</button>
+      <button class="btn btn-outline" onclick="clearModal()">🗑 クリア</button>
+      <button class="btn btn-sm" style="background:#eee;color:#666" onclick="closeModal()">キャンセル</button>
+    </div>
+  </div>
+</div>
+
+<div id="save-indicator"><span class="dot"></span><span id="save-text">保存しました</span></div>
+
+<script>
+/* ═══════ CONSTANTS ═══════ */
+const SK = 'mahokaku_v3';
+const SLOTS = 6;
+const TOTAL_MATCHUPS = SLOTS*(SLOTS-1)/2; // 15
+const MAX_GROUPS = 6;
+const PCOLORS = [
+  '#e63946','#457b9d','#2d6a4f','#e76f51','#6a0572','#0077b6',
+  '#d4a017','#2f4858','#c77dff','#06d6a0','#ff6b35','#1d3557',
+  '#e9c46a','#264653','#9d4edd','#a8dadc','#f72585','#4cc9f0'
+];
+const GCOLORS = ['#e63946','#457b9d','#2d6a4f','#e76f51','#6a0572','#0077b6'];
+const GNAMES  = ['A','B','C','D','E','F'];
+
+/* ═══════ STATE ═══════ */
+let numGroups   = 3;
+let activeGroup = 0;   // -1 = overall
+let activeRound = 1;
+
+// playerPool: [{id, name}]
+let playerPool  = [];
+let pidCounter  = 0;
+
+// groups: [{name}]  (no players — assigned per round via rosters)
+let groups = [];
+
+// rosters[`${gIdx}-${round}`] = [id|null, ...] (SLOTS elements)
+let rosters = {};
+
+// matches: [{id,gIdx,round,p1id,p2id,g1,g2,g3}]
+let matches = [];
+let matchCtr = 0;
+
+// confirmedRounds: Set-like via array of `${gIdx}-${round}`
+let confirmed = [];
+
+// chart instances
+let gCharts  = {};
+let ovCharts = {};
+
+// drag state
+let dragPid = null;
+
+/* ─ TOURNAMENT STATE ─ */
+let tourney = {
+  seeds: Array(8).fill(''),
+  results: {}  // matchId → 0|1
+};
+let tModalMatchId = null;
+
+/* ═══════ INIT ═══════ */
+function initGroups(n) {
+  while (groups.length < n) {
+    const i = groups.length;
+    groups.push({ name: GNAMES[i] || `G${i+1}` });
+  }
+  numGroups = n;
+  if (activeGroup >= numGroups) activeGroup = numGroups-1;
+}
+
+function defaultPool() {
+  playerPool = [];
+  for (let i=1; i<=18; i++) addToPool(`選手${i}`, false);
+}
+
+function addToPool(name, render=true) {
+  if (!name.trim()) return;
+  pidCounter++;
+  playerPool.push({ id: `p${pidCounter}`, name: name.trim() });
+  if (render) renderAll();
+}
+
+function removeFromPool(pid) {
+  // Remove from pool and any roster slots
+  playerPool = playerPool.filter(p => p.id !== pid);
+  Object.keys(rosters).forEach(key => {
+    rosters[key] = rosters[key].map(id => id===pid ? null : id);
+  });
+  // Remove related matches
+  matches = matches.filter(m => m.p1id!==pid && m.p2id!==pid);
+  renderAll(); saveAll();
+}
+
+/* ═══════ ROSTER ═══════ */
+function getRoster(gIdx, round) {
+  const key = `${gIdx}-${round}`;
+  if (rosters[key]) return [...rosters[key]];
+  // Carry from previous round
+  if (round > 1) return getRoster(gIdx, round-1);
+  return Array(SLOTS).fill(null);
+}
+
+function setRosterSlot(gIdx, round, slot, pid) {
+  const key = `${gIdx}-${round}`;
+  if (!rosters[key]) rosters[key] = getRoster(gIdx, round);
+  rosters[key][slot] = pid;
+}
+
+function clearRosterSlot(gIdx, round, slot) {
+  setRosterSlot(gIdx, round, slot, null);
+  renderGroupContent(); saveAll();
+}
+
+function rosterFull(gIdx, round) {
+  return getRoster(gIdx, round).every(id => id !== null);
+}
+
+function getPlayerName(pid) {
+  const p = playerPool.find(x => x.id===pid);
+  return p ? p.name : '?';
+}
+
+/* ═══════ STATS ═══════ */
+function calcStats(gIdx, rounds) {
+  // rounds=null → all rounds
+  const s = {}; // pid → stats obj
+  matches.forEach(m => {
+    if (m.gIdx !== gIdx) return;
+    if (rounds && !rounds.includes(m.round)) return;
+    const w = winner(m);
+    if (w===null) return;
+    const g1w=[m.g1,m.g2,m.g3].filter(x=>x===0).length;
+    const g2w=[m.g1,m.g2,m.g3].filter(x=>x===1).length;
+    const totalG = g1w+g2w;
+    [m.p1id,m.p2id].forEach(pid=>{
+      if(!s[pid]) s[pid]={pid,sets:0,setWins:0,totalGames:0,gameWins:0};
+    });
+    s[m.p1id].sets++;     s[m.p2id].sets++;
+    s[m.p1id].totalGames+=totalG; s[m.p2id].totalGames+=totalG;
+    s[m.p1id].gameWins+=g1w;  s[m.p2id].gameWins+=g2w;
+    if(w===0) s[m.p1id].setWins++;
+    else      s[m.p2id].setWins++;
+  });
+  return Object.values(s).map(x=>({
+    ...x,
+    name: getPlayerName(x.pid),
+    setWR:  x.sets>0       ? x.setWins/x.sets       : 0,
+    gameWR: x.totalGames>0 ? x.gameWins/x.totalGames : 0,
+  })).sort((a,b)=>b.setWins-a.setWins||b.gameWR-a.gameWR);
+}
+
+function calcH2H(gIdx, round) {
+  // h[pid1][pid2] = {mw,ml,gw,gl}
+  const h={};
+  const ensure=p=>{if(!h[p])h[p]={};};
+  const ensurePair=(a,b)=>{ensure(a);ensure(b);if(!h[a][b])h[a][b]={mw:0,ml:0,gw:0,gl:0};if(!h[b][a])h[b][a]={mw:0,ml:0,gw:0,gl:0};};
+  matches.forEach(m=>{
+    if(m.gIdx!==gIdx||m.round!==round) return;
+    const w=winner(m);
+    const g1w=[m.g1,m.g2,m.g3].filter(x=>x===0).length;
+    const g2w=[m.g1,m.g2,m.g3].filter(x=>x===1).length;
+    ensurePair(m.p1id,m.p2id);
+    h[m.p1id][m.p2id].gw+=g1w; h[m.p1id][m.p2id].gl+=g2w;
+    h[m.p2id][m.p1id].gw+=g2w; h[m.p2id][m.p1id].gl+=g1w;
+    if(w===0){h[m.p1id][m.p2id].mw++;h[m.p2id][m.p1id].ml++;}
+    if(w===1){h[m.p2id][m.p1id].mw++;h[m.p1id][m.p2id].ml++;}
+  });
+  return h;
+}
+
+function winner(m){
+  const p1=[m.g1,m.g2,m.g3].filter(x=>x===0).length;
+  const p2=[m.g1,m.g2,m.g3].filter(x=>x===1).length;
+  if(p1>=2) return 0;
+  if(p2>=2) return 1;
+  return null;
+}
+
+function isConfirmed(gIdx,round){return confirmed.includes(`${gIdx}-${round}`);}
+
+function roundComplete(gIdx,round){
+  if(!rosterFull(gIdx,round)) return false;
+  const roster=getRoster(gIdx,round);
+  for(let i=0;i<SLOTS;i++) for(let j=i+1;j<SLOTS;j++){
+    const m=findMatch(gIdx,round,roster[i],roster[j]);
+    if(!m||winner(m)===null) return false;
+  }
+  return true;
+}
+
+function completedCount(gIdx,round){
+  const roster=getRoster(gIdx,round);
+  let c=0;
+  for(let i=0;i<SLOTS;i++) for(let j=i+1;j<SLOTS;j++){
+    const m=findMatch(gIdx,round,roster[i],roster[j]);
+    if(m&&winner(m)!==null) c++;
+  }
+  return c;
+}
+
+function findMatch(gIdx,round,p1id,p2id){
+  return matches.find(m=>m.gIdx===gIdx&&m.round===round&&
+    ((m.p1id===p1id&&m.p2id===p2id)||(m.p1id===p2id&&m.p2id===p1id)));
+}
+
+function getMaxRound(gIdx){
+  let mx=0;
+  matches.forEach(m=>{if(m.gIdx===gIdx)mx=Math.max(mx,m.round);});
+  Object.keys(rosters).forEach(k=>{
+    const [g,r]=k.split('-').map(Number);
+    if(g===gIdx) mx=Math.max(mx,r);
+  });
+  return Math.max(mx,1);
+}
+
+/* ═══════ DRAG ═══════ */
+function onDragStart(e,pid){
+  dragPid=pid;
+  e.dataTransfer.effectAllowed='copy';
+  e.dataTransfer.setData('text/plain',pid);
+}
+function onSlotOver(e){e.preventDefault();e.currentTarget.classList.add('drag-over');}
+function onSlotLeave(e){e.currentTarget.classList.remove('drag-over');}
+function onSlotDrop(e,gIdx,round,slot){
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  const pid=e.dataTransfer.getData('text/plain')||dragPid;
+  if(!pid) return;
+  setRosterSlot(gIdx,round,slot,pid);
+  // Remove any matches that used old player in this slot (if changed)
+  renderGroupContent(); saveAll();
+}
+
+/* ═══════ TABS ═══════ */
+function renderGroupTabs(){
+  const el=document.getElementById('group-tabs');
+  el.innerHTML='';
+  for(let g=0;g<numGroups;g++){
+    const btn=document.createElement('button');
+    btn.className='group-tab'+(activeGroup===g?' active':'');
+    if(activeGroup===g){btn.style.background=GCOLORS[g];btn.style.color='#fff';}
+    btn.textContent=`グループ ${groups[g].name}`;
+    btn.onclick=(()=>{const _g=g;return()=>{activeGroup=_g;renderAll();}})();
+    el.appendChild(btn);
+  }
+  const all=document.createElement('button');
+  all.className='group-tab'+(activeGroup===-1?' active':'');
+  if(activeGroup===-1){all.style.background='#6b35b8';all.style.color='#fff';}
+  all.textContent='🌐 全体';
+  all.onclick=()=>{activeGroup=-1;renderAll();};
+  el.appendChild(all);
+  const tnBtn=document.createElement('button');
+  tnBtn.className='group-tab'+(activeGroup===-2?' active':'');
+  if(activeGroup===-2){tnBtn.style.background='#0d3b6e';tnBtn.style.color='#ffd700';}
+  tnBtn.textContent='🏆 トーナメント';
+  tnBtn.onclick=()=>{activeGroup=-2;renderAll();};
+  el.appendChild(tnBtn);
+  if(numGroups<MAX_GROUPS){
+    const a=document.createElement('button');
+    a.className='tab-aux tab-add';a.textContent='＋';a.title='グループ追加';
+    a.onclick=()=>{initGroups(numGroups+1);activeGroup=numGroups-1;renderAll();saveAll();};
+    el.appendChild(a);
+  }
+  if(numGroups>1){
+    const d=document.createElement('button');
+    d.className='tab-aux tab-del';d.textContent='－';d.title='最後のグループを削除';
+    d.onclick=()=>{
+      if(!confirm(`グループ ${groups[numGroups-1].name} を削除しますか？`)) return;
+      const di=numGroups-1;
+      matches=matches.filter(m=>m.gIdx!==di);
+      Object.keys(rosters).forEach(k=>{if(k.startsWith(`${di}-`))delete rosters[k];});
+      confirmed=confirmed.filter(c=>!c.startsWith(`${di}-`));
+      groups.pop();numGroups--;
+      if(activeGroup>=numGroups)activeGroup=numGroups-1;
+      renderAll();saveAll();
+    };
+    el.appendChild(d);
+  }
+}
+
+/* ═══════ GROUP CONTENT ═══════ */
+function renderGroupContent(){
+  const cont=document.getElementById('group-content');
+  const ov=document.getElementById('overall-section');
+  const tn=document.getElementById('tourney-section');
+  if(activeGroup===-2){cont.style.display='none';ov.style.display='none';tn.style.display='block';renderTournament();return;}
+  tn.style.display='none';
+  if(activeGroup===-1){cont.style.display='none';ov.style.display='block';renderOverall();return;}
+  cont.style.display='block';ov.style.display='none';
+  const g=activeGroup, grp=groups[g], gc=GCOLORS[g];
+  const maxRd=getMaxRound(g);
+  const roster=getRoster(g,activeRound);
+  const done=completedCount(g,activeRound);
+  const isConf=isConfirmed(g,activeRound);
+  const complete=roundComplete(g,activeRound);
+
+  cont.innerHTML=`
+  <!-- 選手登録・割り当て -->
+  <div class="card">
+    <div class="card-header" style="border-left-color:${gc}">
+      👥 選手登録 &amp; グループ ${esc(grp.name)} 割り当て（ラウンド${activeRound}）
+      ${isConf?'<span style="margin-left:8px;font-size:.75rem;background:rgba(21,101,192,.2);border-radius:6px;padding:2px 8px;color:#1565c0">🔒 確定済み</span>':''}
+    </div>
+    <div class="card-body">
+      <div class="pool-layout">
+        <div class="pool-panel">
+          <h3>📋 登録選手プール（ドラッグしてスロットへ）</h3>
+          <div class="pool-chips" id="pool-chips"></div>
+          <div class="pool-add-row">
+            <input class="pool-add-input" type="text" id="pool-add-input" placeholder="選手名を入力..." maxlength="12"
+              onkeydown="if(event.key==='Enter'){addPoolFromInput();}" >
+            <button class="btn btn-primary btn-sm" onclick="addPoolFromInput()">＋ 登録</button>
+          </div>
+        </div>
+        <div class="slots-panel">
+          <h3>⬛ グループ ${esc(grp.name)} スロット</h3>
+          <div id="slots-${g}"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ラウンド -->
+  <div class="round-bar">
+    <span class="round-label">🗓 ラウンド</span>
+    <div id="round-btns-${g}" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+    <button class="round-add-btn" onclick="addRound(${g})">＋ 追加</button>
+    ${maxRd>1?`<button class="round-del-btn" onclick="delRound(${g})">R${maxRd} 削除</button>`:''}
+    <span class="round-progress" id="rp-${g}">${done}/${TOTAL_MATCHUPS} 試合完了</span>
+  </div>
+
+  <!-- 確定バナー -->
+  <div id="confirm-strip-${g}"></div>
+
+  <!-- ランキング -->
+  <div class="card">
+    <div class="card-header" style="border-left-color:${gc}">🏆 グループ ${esc(grp.name)} ランキング（全ラウンド累計）</div>
+    <div class="card-body"><div class="ranking-row" id="ranking-${g}"></div></div>
+  </div>
+
+  <!-- 総当たり表 -->
+  <div class="card">
+    <div class="card-header" style="border-left-color:${gc}">
+      ⚔️ 総当たり表 — ラウンド ${activeRound}
+      <span style="margin-left:auto;font-size:.73rem;color:rgba(255,215,0,.6)">
+        ${isConf?'🔒 確定済み（読み取り専用）':'セルをクリックして結果入力'}
+      </span>
+    </div>
+    <div class="card-body" style="padding:12px"><div class="matrix-wrap"><div id="matrix-${g}"></div></div></div>
+  </div>
+
+  <!-- 順位表（当ラウンド） -->
+  <div class="card">
+    <div class="card-header" style="border-left-color:${gc}">
+      📋 順位表 — ラウンド ${activeRound}
+      
+    </div>
+    <div class="card-body" style="padding:12px">
+      <div class="table-scroll"><table class="standings-table"><thead><tr>
+        <th>順位</th><th style="text-align:left;padding-left:12px">選手名</th>
+        <th>セット<br>勝－敗</th><th>セット<br>勝率</th>
+        <th>試合<br>成績</th>
+      </tr></thead><tbody id="st-body-${g}"></tbody></table></div>
+    </div>
+  </div>
+
+  <!-- 順位表（全累計） -->
+  <div class="card">
+    <div class="card-header" style="border-left-color:${gc}">📊 全ラウンド累計 順位表</div>
+    <div class="card-body" style="padding:12px">
+      <div class="table-scroll"><table class="standings-table"><thead><tr>
+        <th>順位</th><th style="text-align:left;padding-left:12px">選手名</th>
+        <th>セット<br>勝－敗</th><th>セット<br>勝率</th>
+        <th>試合<br>成績</th>
+      </tr></thead><tbody id="st-all-body-${g}"></tbody></table></div>
+    </div>
+  </div>
+
+  <!-- グラフ -->
+  <div class="card">
+    <div class="card-header" style="border-left-color:${gc}">📈 グラフ — グループ ${esc(grp.name)}</div>
+    <div class="card-body">
+      <div class="charts-grid">
+        <div class="chart-box"><h3>🏅 セット勝利数（累計）</h3><canvas id="chart-mw-${g}" height="220"></canvas></div>
+        <div class="chart-box"><h3>📊 セット勝率 vs 試合勝率（累計）</h3><canvas id="chart-rate-${g}" height="220"></canvas></div>
+      </div>
+    </div>
+  </div>
+  `;
+
+  renderPoolChips();
+  renderSlots(g,activeRound);
+  renderRoundBtns(g,maxRd);
+  renderConfirmStrip(g,activeRound);
+  renderRanking(g);
+  renderMatrix(g,activeRound);
+  renderStandings(g,[activeRound],`st-body-${g}`);
+  renderStandings(g,null,`st-all-body-${g}`);
+  renderGroupCharts(g);
+  updateHd();
+}
+
+/* ─ Pool chips ─ */
+function renderPoolChips(){
+  const el=document.getElementById('pool-chips');
+  if(!el) return;
+  if(!playerPool.length){el.innerHTML='<span style="color:#ccc;font-size:.8rem">選手を登録してください</span>';return;}
+  el.innerHTML=playerPool.map((p,i)=>`
+    <div class="pool-chip" style="background:${PCOLORS[i%PCOLORS.length]}"
+      draggable="true"
+      ondragstart="onDragStart(event,'${p.id}')"
+    >
+      ${esc(p.name)}
+      <button class="chip-del" onclick="event.stopPropagation();removeFromPool('${p.id}')">×</button>
+    </div>
+  `).join('');
+}
+
+function addPoolFromInput(){
+  const inp=document.getElementById('pool-add-input');
+  if(!inp||!inp.value.trim()) return;
+  addToPool(inp.value.trim());
+  inp.value='';
+}
+
+/* ─ Slots ─ */
+function renderSlots(g,round){
+  const el=document.getElementById(`slots-${g}`);
+  if(!el) return;
+  const roster=getRoster(g,round);
+  const isConf=isConfirmed(g,round);
+  el.innerHTML=roster.map((pid,slot)=>{
+    const hasPlayer=pid!==null;
+    const pname=hasPlayer?getPlayerName(pid):'';
+    const pcolor=hasPlayer?(()=>{const idx=playerPool.findIndex(x=>x.id===pid);return PCOLORS[idx>=0?idx%PCOLORS.length:slot];})():'#ccc';
+    return `<div class="slot-item${hasPlayer?' has-player':''}"
+      ${isConf?'':` ondragover="onSlotOver(event)" ondragleave="onSlotLeave(event)" ondrop="onSlotDrop(event,${g},${round},${slot})"`}
+    >
+      <span class="slot-num">P${slot+1}</span>
+      ${hasPlayer
+        ? `<span class="slot-name"><span class="color-dot" style="background:${pcolor}"></span>${esc(pname)}</span>
+           ${isConf?'':'<button class="slot-clr" onclick="clearRosterSlot('+g+','+round+','+slot+')">×</button>'}`
+        : `<span class="slot-name empty">${isConf?'(未割り当て)':'ここにドロップ'}</span>`
+      }
+    </div>`;
+  }).join('');
+}
+
+/* ─ Round buttons ─ */
+function renderRoundBtns(g,maxRd){
+  const el=document.getElementById(`round-btns-${g}`);
+  if(!el) return;
+  el.innerHTML='';
+  for(let r=1;r<=maxRd;r++){
+    const btn=document.createElement('button');
+    const isConf=isConfirmed(g,r);
+    btn.className='round-btn'+(r===activeRound?' active':'')+(isConf?' confirmed-round':'');
+    const done=completedCount(g,r);
+    btn.textContent=`R${r} (${done}/${TOTAL_MATCHUPS})`;
+    btn.onclick=(()=>{const _r=r;return()=>{activeRound=_r;renderGroupContent();}})();
+    el.appendChild(btn);
+  }
+}
+
+function addRound(g){
+  const maxRd=getMaxRound(g);
+  activeRound=maxRd+1;
+  // Pre-fill roster from previous round
+  const prevRoster=getRoster(g,activeRound-1);
+  const key=`${g}-${activeRound}`;
+  if(!rosters[key]) rosters[key]=[...prevRoster];
+  renderGroupContent();
+}
+
+function delRound(g){
+  const maxRd=getMaxRound(g);
+  if(maxRd<=1) return;
+  if(!confirm(`ラウンド${maxRd}を削除しますか？対戦データも消えます。`)) return;
+  matches=matches.filter(m=>!(m.gIdx===g&&m.round===maxRd));
+  const key=`${g}-${maxRd}`;delete rosters[key];
+  confirmed=confirmed.filter(c=>c!==`${g}-${maxRd}`);
+  if(activeRound>=maxRd)activeRound=maxRd-1;
+  renderGroupContent();saveAll();
+}
+
+/* ─ Confirm strip ─ */
+function renderConfirmStrip(g,round){
+  const el=document.getElementById(`confirm-strip-${g}`);
+  if(!el) return;
+  const isConf=isConfirmed(g,round);
+  const complete=roundComplete(g,round);
+  if(isConf){
+    const ts=confirmed.find(c=>c.key===`${g}-${round}`)?.ts||'';
+    el.innerHTML=`<div class="confirm-strip confirmed">
+      <span class="confirm-msg confirmed-msg">🔒 ラウンド${round}は確定済みです。編集は不可です。</span>
+      <button class="btn-unconfirm" onclick="unconfirmRound(${g},${round})">確定を解除</button>
+    </div>`;
+  } else if(complete){
+    el.innerHTML=`<div class="confirm-strip">
+      <span class="confirm-msg">✅ 全${TOTAL_MATCHUPS}試合完了！ラウンド${round}を確定できます。</span>
+      <button class="btn-confirm" onclick="confirmRound(${g},${round})">🔒 ラウンド${round}を確定する</button>
+    </div>`;
+  } else {
+    el.innerHTML='';
+  }
+}
+
+function confirmRound(g,round){
+  if(!confirm(`ラウンド${round}を確定しますか？確定後は結果を編集できません。`)) return;
+  const key=`${g}-${round}`;
+  if(!confirmed.includes(key)) confirmed.push(key);
+  showIndicator(`ラウンド${round}を確定しました 🔒`);
+  renderGroupContent(); saveAll();
+}
+
+function unconfirmRound(g,round){
+  if(!confirm('確定を解除しますか？')) return;
+  const key=`${g}-${round}`;
+  confirmed=confirmed.filter(c=>c!==key);
+  renderGroupContent(); saveAll();
+}
+
+/* ─ Ranking ─ */
+function renderRanking(g){
+  const el=document.getElementById(`ranking-${g}`);
+  if(!el) return;
+  const stats=calcStats(g,null).filter(s=>s.sets>0);
+  if(!stats.length){el.innerHTML='<p class="empty-state">対戦データを入力するとランキングが表示されます</p>';return;}
+  el.innerHTML=stats.map((s,i)=>{
+    const cls=i===0?'rank-1':i===1?'rank-2':i<8?'rank-top8':'rank-other';
+    const medal=i===0?'🥇':i===1?'🥈':`${i+1}位`;
+    const divider=i===7?'<div class="rank-border-line">🏟️ 決勝進出ボーダー</div>':'';
+    return `<div class="rank-card ${cls}">
+      <span class="rank-medal">${medal}</span>
+      <div class="rank-name">${esc(s.name)}</div>
+      <div class="rank-pt">${s.setWins}－${s.sets-s.setWins}</div>
+      <div class="rank-sub">セット勝率 ${pct(s.setWR)}</div>
+      <div class="rank-sub">試合勝率 ${pct(s.gameWR)}</div>
+    </div>${divider}`;
+  }).join('');
+}
+
+/* ─ Matrix ─ */
+function renderMatrix(g,round){
+  const el=document.getElementById(`matrix-${g}`);
+  if(!el) return;
+  const roster=getRoster(g,round);
+  const isConf=isConfirmed(g,round);
+  const h=calcH2H(g,round);
+
+  let html=`<table class="rr-table"><thead><tr>
+    <th style="min-width:80px">↓ vs →</th>
+    ${roster.map((pid,j)=>{
+      const c=PCOLORS[playerPool.findIndex(x=>x.id===pid)%PCOLORS.length]||GCOLORS[g];
+      return `<th style="color:${c}">${pid?esc(getPlayerName(pid)):'?'}</th>`;
+    }).join('')}
+  </tr></thead><tbody>`;
+
+  for(let i=0;i<SLOTS;i++){
+    const pid_i=roster[i];
+    const ic=PCOLORS[playerPool.findIndex(x=>x.id===pid_i)%PCOLORS.length]||GCOLORS[g];
+    html+=`<tr><td class="row-name" style="color:${ic}">${pid_i?esc(getPlayerName(pid_i)):''}</td>`;
+    for(let j=0;j<SLOTS;j++){
+      if(i===j){html+=`<td><div class="rr-cell self">―</div></td>`;continue;}
+      if(!pid_i||!roster[j]){html+=`<td><div class="rr-cell self" style="background:#2a2a3a">—</div></td>`;continue;}
+      const pid_j=roster[j];
+      const pp1=pid_i<pid_j?pid_i:pid_j, pp2=pid_i<pid_j?pid_j:pid_i;
+      const m=findMatch(g,round,pid_i,pid_j);
+      if(!m){
+        if(isConf){
+          html+=`<td><div class="rr-cell locked"><span class="rr-score pend">―</span></div></td>`;
+        } else {
+          html+=`<td><div class="rr-cell" onclick="openModal(${g},${round},'${pid_i}','${pid_j}')">
+            <span class="rr-score pend">未対戦</span></div></td>`;
+        }
+      } else {
+        const w=winner(m);
+        const myW=m.p1id===pid_i?[m.g1,m.g2,m.g3].filter(x=>x===0).length:[m.g1,m.g2,m.g3].filter(x=>x===1).length;
+        const opW=m.p1id===pid_i?[m.g1,m.g2,m.g3].filter(x=>x===1).length:[m.g1,m.g2,m.g3].filter(x=>x===0).length;
+        const won=(m.p1id===pid_i&&w===0)||(m.p2id===pid_i&&w===1);
+        const lost=(m.p1id===pid_i&&w===1)||(m.p2id===pid_i&&w===0);
+        const cellCls=won?'win':lost?'lose':'';
+        const sColor=won?'w':lost?'l':'';
+        const games=[m.g1,m.g2,m.g3].filter(x=>x!==null).map((x)=>(m.p1id===pid_i?x===0:x===1)?'○':'●').join('');
+        const clickable=isConf?'locked':'';
+        const onClick=isConf?'':` onclick="openModal(${g},${round},'${pid_i}','${pid_j}')"`;
+        html+=`<td><div class="rr-cell done ${cellCls} ${clickable}"${onClick}>
+          <span class="rr-score ${sColor}">${myW}―${opW}</span>
+          <span class="rr-games">${games}</span>
+        </div></td>`;
+      }
+    }
+    html+=`</tr>`;
+  }
+  html+=`</tbody></table>`;
+  el.innerHTML=html;
+}
+
+/* ─ Standings ─ */
+function renderStandings(g,rounds,tbodyId){
+  const tbody=document.getElementById(tbodyId);
+  if(!tbody) return;
+  const stats=calcStats(g,rounds);
+  if(!stats.length||stats.every(s=>s.sets===0)){
+    tbody.innerHTML=`<tr><td colspan="5" class="empty-state">対戦データがありません</td></tr>`;return;
+  }
+  const rc=['top1','top2',''];
+  const bc=['r1','r2',''];
+  tbody.innerHTML=stats.map((s,i)=>{
+    const pi=playerPool.findIndex(x=>x.id===s.pid);
+    const pc=PCOLORS[pi>=0?pi%PCOLORS.length:i];
+    return `<tr class="${rc[i]||''}">
+      <td><span class="rank-badge ${bc[i]||''}">${i+1}</span></td>
+      <td class="td-name"><span class="color-dot" style="background:${pc}"></span>${esc(s.name)}</td>
+      <td style="text-align:center;font-weight:700">${s.setWins}－${s.sets-s.setWins}</td>
+      <td>
+        <div class="stat-dual">
+          <div class="stat-row">
+            <span class="stat-label">S</span>
+            <span class="${s.setWR>=.5?'pos':'neg'}">${pct(s.setWR)}</span>
+          </div>
+          <div class="stat-bar"><div class="stat-fill-s" style="width:${s.setWR*100}%"></div></div>
+        </div>
+      </td>
+      <td style="text-align:center;white-space:nowrap">
+        <span class="${s.gameWins>0?'pos':''}" style="font-weight:700">${s.gameWins}/${s.totalGames}</span><br>
+        <span style="font-size:.7rem;opacity:.85">(${pct(s.gameWR)})</span>
+        <div class="stat-bar" style="margin-top:3px"><div class="stat-fill-g" style="width:${s.gameWR*100}%"></div></div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+/* ─ Group Charts ─ */
+function renderGroupCharts(g){
+  ['mw','rate'].forEach(k=>{
+    const key=`${g}-${k}`;
+    if(gCharts[key]){gCharts[key].destroy();delete gCharts[key];}
+  });
+  const stats=calcStats(g,null).filter(s=>s.sets>0);
+  if(!stats.length) return;
+  const names=stats.map(s=>s.name);
+  const colors=stats.map(s=>{const pi=playerPool.findIndex(x=>x.id===s.pid);return PCOLORS[pi>=0?pi%PCOLORS.length:0];});
+
+  const ctx1=document.getElementById(`chart-mw-${g}`);
+  if(ctx1) gCharts[`${g}-mw`]=new Chart(ctx1.getContext('2d'),{
+    type:'bar',
+    data:{labels:names,datasets:[{label:'セット勝利数',data:stats.map(s=>s.setWins),backgroundColor:colors.map(c=>c+'bb'),borderColor:colors,borderWidth:2,borderRadius:6}]},
+    options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{stepSize:1}}}}
+  });
+  const ctx2=document.getElementById(`chart-rate-${g}`);
+  if(ctx2) gCharts[`${g}-rate`]=new Chart(ctx2.getContext('2d'),{
+    type:'bar',
+    data:{labels:names,datasets:[
+      {label:'セット勝率',data:stats.map(s=>+(s.setWR*100).toFixed(1)),backgroundColor:'rgba(46,125,50,.7)',borderColor:'#2e7d32',borderWidth:2,borderRadius:4},
+      {label:'試合勝率', data:stats.map(s=>+(s.gameWR*100).toFixed(1)),backgroundColor:'rgba(107,53,184,.7)',borderColor:GCOLORS[g],borderWidth:2,borderRadius:4}
+    ]},
+    options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:10}}}},scales:{y:{beginAtZero:true,max:100,ticks:{callback:v=>v+'%'}}}}
+  });
+}
+
+/* ─ Overall ─ */
+function renderOverall(){
+  const rr=document.getElementById('overall-ranking');
+  let all=[];
+  for(let g=0;g<numGroups;g++){
+    const st=calcStats(g,null).filter(s=>s.sets>0);
+    st.forEach((s,gi)=>all.push({...s,grpName:groups[g].name,g,grpRank:gi}));
+  }
+  all.sort((a,b)=>b.setWins-a.setWins||b.gameWR-a.gameWR);
+  if(!all.length){rr.innerHTML='<p class="empty-state">データがありません</p>';}
+  else rr.innerHTML=all.map((s,i)=>{
+    const cls=s.grpRank===0?'rank-1':s.grpRank===1?'rank-2':i<8?'rank-top8':'rank-other';
+    const medal=i===0?'🥇':i===1?'🥈':`${i+1}位`;
+    const divider=i===7?'<div class="rank-border-line">🏟️ 決勝進出ボーダー</div>':'';
+    return `<div class="rank-card ${cls}">
+      <span class="rank-medal">${medal}</span>
+      <div class="rank-name">${esc(s.name)}<br><small style="opacity:.75;font-size:.65rem">Grp.${esc(s.grpName)}</small></div>
+      <div class="rank-pt">${s.setWins}－${s.sets-s.setWins}</div>
+      <div class="rank-sub">S率 ${pct(s.setWR)} / G率 ${pct(s.gameWR)}</div>
+    </div>${divider}`;
+  }).join('');
+
+  ['ov-mw','ov-rate'].forEach(k=>{if(ovCharts[k]){ovCharts[k].destroy();delete ovCharts[k];}});
+  const ctx1=document.getElementById('chart-ov-mw');
+  const ctx2=document.getElementById('chart-ov-rate');
+  if(all.length&&ctx1&&ctx2){
+    const names=all.map(s=>`${s.name}(${s.grpName})`);
+    const cols=all.map(s=>GCOLORS[s.g]);
+    ovCharts['ov-mw']=new Chart(ctx1.getContext('2d'),{type:'bar',data:{labels:names,datasets:[{label:'セット勝利数',data:all.map(s=>s.setWins),backgroundColor:cols.map(c=>c+'bb'),borderColor:cols,borderWidth:2,borderRadius:5}]},options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{stepSize:1}},x:{ticks:{font:{size:9}}}}}});
+    ovCharts['ov-rate']=new Chart(ctx2.getContext('2d'),{type:'bar',data:{labels:names,datasets:[{label:'セット勝率',data:all.map(s=>+(s.setWR*100).toFixed(1)),backgroundColor:'rgba(46,125,50,.7)',borderColor:'#2e7d32',borderWidth:2,borderRadius:4},{label:'試合勝率',data:all.map(s=>+(s.gameWR*100).toFixed(1)),backgroundColor:'rgba(107,53,184,.7)',borderColor:'#6b35b8',borderWidth:2,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:10}}}},scales:{y:{beginAtZero:true,max:100,ticks:{callback:v=>v+'%'}},x:{ticks:{font:{size:9}}}}}});
+  }
+}
+
+/* ═══════ MODAL ═══════ */
+let mCtx=null, mG=[null,null,null];
+
+function openModal(g,round,p1id,p2id){
+  if(isConfirmed(g,round)) return;
+  mCtx={g,round,p1id,p2id};
+  const m=findMatch(g,round,p1id,p2id);
+  mG=m?[m.g1,m.g2,m.g3]:[null,null,null];
+  // Make sure p1id is always the one stored as p1 if match exists
+  if(m&&m.p1id===p2id){
+    // Swap so mG reflects p1id perspective
+    mG=[m.g1,m.g2,m.g3].map(x=>x===null?null:x===0?1:0);
+  }
+  document.getElementById('modal-title').textContent=`ラウンド${round} 対戦入力`;
+  const n1=getPlayerName(p1id), n2=getPlayerName(p2id);
+  const c1=PCOLORS[playerPool.findIndex(x=>x.id===p1id)%PCOLORS.length]||'#333';
+  const c2=PCOLORS[playerPool.findIndex(x=>x.id===p2id)%PCOLORS.length]||'#333';
+  document.getElementById('m-p1n').textContent=n1;document.getElementById('m-p1n').style.color=c1;
+  document.getElementById('m-p2n').textContent=n2;document.getElementById('m-p2n').style.color=c2;
+  ['g1p1','g1p2','g2p1','g2p2','g3p1','g3p2'].forEach(id=>{
+    const btn=document.getElementById(id);
+    if(id.endsWith('p1')) btn.textContent=n1; else btn.textContent=n2;
+  });
+  updateModalUI();
+  document.getElementById('modal').classList.remove('hidden');
+}
+function closeModal(){document.getElementById('modal').classList.add('hidden');mCtx=null;mG=[null,null,null];}
+function clearModal(){
+  if(!mCtx) return;
+  const{g,round,p1id,p2id}=mCtx;
+  matches=matches.filter(m=>!(m.gIdx===g&&m.round===round&&
+    ((m.p1id===p1id&&m.p2id===p2id)||(m.p1id===p2id&&m.p2id===p1id))));
+  closeModal(); renderGroupContent(); saveAll();
+}
+function setG(game,side){
+  const idx=game-1; mG[idx]=(mG[idx]===side)?null:side;
+  const p1w2=[mG[0],mG[1]].filter(x=>x===0).length;
+  const p2w2=[mG[0],mG[1]].filter(x=>x===1).length;
+  if(p1w2>=2||p2w2>=2) mG[2]=null;
+  updateModalUI();
+}
+function updateModalUI(){
+  const [g1,g2,g3]=mG;
+  const w=winner({g1,g2,g3});
+  const p1w=[g1,g2,g3].filter(x=>x===0).length;
+  const p2w=[g1,g2,g3].filter(x=>x===1).length;
+  const n1=mCtx?getPlayerName(mCtx.p1id):'P1';
+  const n2=mCtx?getPlayerName(mCtx.p2id):'P2';
+  document.getElementById('g1p1').className='game-btn'+(g1===0?' act-p1':'');
+  document.getElementById('g1p2').className='game-btn'+(g1===1?' act-p2':'');
+  document.getElementById('g2p1').className='game-btn'+(g2===0?' act-p1':'');
+  document.getElementById('g2p2').className='game-btn'+(g2===1?' act-p2':'');
+  const p1w2=[g1,g2].filter(x=>x===0).length, p2w2=[g1,g2].filter(x=>x===1).length;
+  const g3ok=g1!==null&&g2!==null&&p1w2<2&&p2w2<2;
+  document.getElementById('g3-block').style.opacity=g3ok?'1':'.3';
+  document.getElementById('g3p1').className='game-btn'+(g3===0?' act-p1':'')+(g3ok?'':' dis');
+  document.getElementById('g3p2').className='game-btn'+(g3===1?' act-p2':'')+(g3ok?'':' dis');
+  const prev=document.getElementById('result-prev');
+  if(w===0){prev.textContent=`${p1w}―${p2w} 🏆 ${n1} の勝利`;prev.className='result-preview wp1';}
+  else if(w===1){prev.textContent=`${p1w}―${p2w} 🏆 ${n2} の勝利`;prev.className='result-preview wp2';}
+  else{prev.textContent=p1w+p2w>0?`現在 ${p1w}―${p2w} 進行中…`:'ゲーム結果を入力してください';prev.className='result-preview';}
+  const cfm=document.getElementById('btn-confirm-modal');
+  cfm.disabled=w===null; cfm.style.opacity=w===null?'.5':'1'; cfm.style.cursor=w===null?'not-allowed':'pointer';
+}
+function confirmModal(){
+  if(!mCtx||winner({g1:mG[0],g2:mG[1],g3:mG[2]})===null) return;
+  const{g,round,p1id,p2id}=mCtx;
+  matches=matches.filter(m=>!(m.gIdx===g&&m.round===round&&
+    ((m.p1id===p1id&&m.p2id===p2id)||(m.p1id===p2id&&m.p2id===p1id))));
+  matches.push({id:++matchCtr,gIdx:g,round,p1id,p2id,g1:mG[0],g2:mG[1],g3:mG[2]});
+  closeModal(); renderGroupContent(); saveAll();
+}
+document.getElementById('modal').addEventListener('click',function(e){if(e.target===this)closeModal();});
+
+/* HELPERS */
+function pct(r){return (r*100).toFixed(1)+'%';}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function updateHd(){
+  const done=matches.filter(m=>winner(m)!==null).length;
+  document.getElementById('hd-matches').textContent=done;
+}
+function copySNS(g){
+  const yr=document.getElementById('meta-year').value;
+  const mo=document.getElementById('meta-month').value;
+  const st=calcStats(g,null).filter(s=>s.sets>0);
+  let t=`✨ まほかく グループ${groups[g].name} ${yr}年${mo}月\n${'─'.repeat(20)}\n`;
+  ['🥇','🥈','🥉'].forEach((m,i)=>{
+    if(!st[i]) return;
+    const s=st[i];
+    t+=`${m} ${s.name}｜セット${s.setWins}勝/${s.sets}（${pct(s.setWR)}）試合勝率${pct(s.gameWR)}\n`;
+  });
+  t+='#まほかく #魔法の覚醒';
+  navigator.clipboard.writeText(t).then(()=>showIndicator('コピーしました ✓'),()=>alert(t));
+}
+function showIndicator(msg){
+  const el=document.getElementById('save-indicator');
+  document.getElementById('save-text').textContent=msg;
+  el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),2500);
+}
+
+/* SAVE / LOAD */
+function buildState(){
+  return{numGroups,groups,playerPool,pidCounter,rosters,matches,matchCtr,confirmed,activeGroup,activeRound,tourney,
+    year:document.getElementById('meta-year')?.value,
+    month:document.getElementById('meta-month')?.value,
+    savedAt:new Date().toISOString()};
+}
+function applyState(s){
+  numGroups    = s.numGroups    ?? 3;
+  groups       = s.groups       ?? [];
+  playerPool   = s.playerPool   ?? [];
+  pidCounter   = s.pidCounter   ?? playerPool.reduce((mx,p)=>Math.max(mx,+String(p.id).replace('p','')||0),0);
+  rosters      = s.rosters      ?? {};
+  matches      = s.matches      ?? [];
+  matchCtr     = s.matchCtr     ?? matches.reduce((mx,m)=>Math.max(mx,m.id||0),0);
+  confirmed    = s.confirmed    ?? [];
+  activeGroup  = s.activeGroup  ?? 0;
+  activeRound  = s.activeRound  ?? 1;
+  if(s.tourney){tourney.seeds=s.tourney.seeds??Array(8).fill('');tourney.results=s.tourney.results??{};}
+  initGroups(numGroups);
+  if(s.year)  document.getElementById('meta-year').value  = s.year;
+  if(s.month) document.getElementById('meta-month').value = s.month;
+  if(s.savedAt) updateLastSaved(s.savedAt);
+}
+let _dt=null;
+function debouncedRefresh(){clearTimeout(_dt);_dt=setTimeout(()=>{renderAll();saveAll();},350);}
+let _st=null;
+function autoSeedFromRanking(){
+  let all=[];
+  for(let g=0;g<numGroups;g++){
+    const st=calcStats(g,null).filter(s=>s.sets>0);
+    st.forEach(function(s,gi){all.push(Object.assign({},s,{grpRank:gi}));});
+  }
+  all.sort(function(a,b){return b.setWins-a.setWins||b.gameWR-a.gameWR;});
+  if(all.length<8){alert('総合ランキングに8名以上のデータが必要です（現在'+all.length+'名）');return;}
+  if(!confirm('総合ランキング上位8名をトーナメントに自動配置します。現在のシード設定と結果はリセットされます。続けますか？'))return;
+  // 視覚順序: Match1=1位v8位, Match2=2位v7位, Match3=3位v6位, Match4=4位v5位
+  // u1: seeds[0]v seeds[7], u2: seeds[3]v seeds[4], u3: seeds[1]v seeds[6], u4: seeds[2]v seeds[5]
+  tourney.seeds[0]=all[0].name; // 1位
+  tourney.seeds[7]=all[7].name; // 8位
+  tourney.seeds[3]=all[1].name; // 2位
+  tourney.seeds[4]=all[6].name; // 7位
+  tourney.seeds[1]=all[2].name; // 3位
+  tourney.seeds[6]=all[5].name; // 6位
+  tourney.seeds[2]=all[3].name; // 4位
+  tourney.seeds[5]=all[4].name; // 5位
+  tourney.results={};
+  saveAll();renderTournament();
+}
+function saveAll(){
+  clearTimeout(_st);
+  _st=setTimeout(()=>{
+    const state=buildState();
+    localStorage.setItem(SK,JSON.stringify(state));
+    updateLastSaved(state.savedAt);
+    showIndicator('保存しました ✓');
+    syncToGitHub();
+  },500);
+}
+function loadAll(){
+  const raw=localStorage.getItem(SK);
+  if(!raw) return false;
+  try{applyState(JSON.parse(raw));return true;}catch(e){return false;}
+}
+function updateLastSaved(iso){
+  const el=document.getElementById('last-saved');if(!el)return;
+  const d=new Date(iso),pad=n=>String(n).padStart(2,'0');
+  el.textContent=`最終保存: ${d.getFullYear()}/${pad(d.getMonth()+1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+function clearAll(){
+  if(!confirm('全データをリセットしますか？')) return;
+  matches=[];matchCtr=0;rosters={};confirmed=[];
+  localStorage.removeItem(SK);renderAll();showIndicator('リセットしました');
+}
+function exportJSON(){
+  const blob=new Blob([JSON.stringify(buildState(),null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);const a=document.createElement('a');
+  const yr=document.getElementById('meta-year').value;
+  const mo=document.getElementById('meta-month').value;
+  a.href=url;a.download=`mahokaku_${yr}${mo.padStart(2,'0')}.json`;
+  a.click();URL.revokeObjectURL(url);
+}
+function importJSON(e){
+  const file=e.target.files[0];if(!file)return;
+  const r=new FileReader();
+  r.onload=ev=>{
+    try{const s=JSON.parse(ev.target.result);if(!confirm('上書きしますか？'))return;applyState(s);renderAll();saveAll();showIndicator('インポート完了 ✓');}
+    catch{alert('読み込み失敗');}
+  };
+  r.readAsText(file);e.target.value='';
+}
+
+/* TOURNAMENT v2 */
+const TMATCH={
+  u1:{label:'Match 1', p1:{t:'seed',i:0},p2:{t:'seed',i:7}},
+  u2:{label:'Match 2', p1:{t:'seed',i:3},p2:{t:'seed',i:4}},
+  u3:{label:'Match 3', p1:{t:'seed',i:1},p2:{t:'seed',i:6}},
+  u4:{label:'Match 4', p1:{t:'seed',i:2},p2:{t:'seed',i:5}},
+  u5:{label:'Match 7', p1:{t:'winner',mid:'u1'},p2:{t:'winner',mid:'u2'}},
+  u6:{label:'Match 8', p1:{t:'winner',mid:'u3'},p2:{t:'winner',mid:'u4'}},
+  u7:{label:'UB Finals (Match 11)',p1:{t:'winner',mid:'u5'},p2:{t:'winner',mid:'u6'}},
+  l1:{label:'Match 5', p1:{t:'loser',mid:'u1'},p2:{t:'loser',mid:'u2'}},
+  l2:{label:'Match 6', p1:{t:'loser',mid:'u3'},p2:{t:'loser',mid:'u4'}},
+  l3:{label:'Match 9', p1:{t:'winner',mid:'l1'},p2:{t:'loser',mid:'u5'}},
+  l4:{label:'Match 10',p1:{t:'winner',mid:'l2'},p2:{t:'loser',mid:'u6'}},
+  l5:{label:'Match 12',p1:{t:'winner',mid:'l3'},p2:{t:'winner',mid:'l4'}},
+  lf:{label:'LB Finals (Match 13)',p1:{t:'winner',mid:'l5'},p2:{t:'loser',mid:'u7'}},
+  gf:{label:'Grand Finals (Match 14)',p1:{t:'winner',mid:'u7'},p2:{t:'winner',mid:'lf'}},
+  br:{label:'Bracket Reset If Needed (Match 15)',p1:{t:'loser',mid:'gf'},p2:{t:'winner',mid:'gf'}},
+};
+// Connections: f=from, ft=fromType(winner|loser), t=to, ts=toSlot(p1|p2)
+const TCONNS=[
+  {f:'u1',ft:'w',t:'u5',ts:'p1'},{f:'u2',ft:'w',t:'u5',ts:'p2'},
+  {f:'u3',ft:'w',t:'u6',ts:'p1'},{f:'u4',ft:'w',t:'u6',ts:'p2'},
+  {f:'u5',ft:'w',t:'u7',ts:'p1'},{f:'u6',ft:'w',t:'u7',ts:'p2'},
+  {f:'u7',ft:'w',t:'gf',ts:'p1'},{f:'lf',ft:'w',t:'gf',ts:'p2'},
+  {f:'u1',ft:'l',t:'l1',ts:'p1'},{f:'u2',ft:'l',t:'l1',ts:'p2'},
+  {f:'u3',ft:'l',t:'l2',ts:'p1'},{f:'u4',ft:'l',t:'l2',ts:'p2'},
+  {f:'l1',ft:'w',t:'l3',ts:'p1'},{f:'u5',ft:'l',t:'l3',ts:'p2'},
+  {f:'l2',ft:'w',t:'l4',ts:'p1'},{f:'u6',ft:'l',t:'l4',ts:'p2'},
+  {f:'l3',ft:'w',t:'l5',ts:'p1'},{f:'l4',ft:'w',t:'l5',ts:'p2'},
+  {f:'l5',ft:'w',t:'lf',ts:'p1'},{f:'u7',ft:'l',t:'lf',ts:'p2'},
+];
+function tGetR(mid){return tourney.results[mid];}
+function tGetW(mid){const r=tGetR(mid);return r!=null?r.w:null;}
+function tGetName(src){
+  if(!src)return null;
+  if(src.t==='seed')return tourney.seeds[src.i]||null;
+  const w=tGetW(src.mid);if(w==null)return null;
+  const m=TMATCH[src.mid];
+  return tGetName(src.t==='winner'?(w===0?m.p1:m.p2):(w===0?m.p2:m.p1));
+}
+function tIsReady(mid){const m=TMATCH[mid];return tGetName(m.p1)!==null&&tGetName(m.p2)!==null;}
+function tNeedsBR(){
+  const w=tGetW('gf');if(w==null)return false;
+  const m=TMATCH['gf'];return tGetName(w===0?m.p1:m.p2)===tGetName(m.p2);
+}
+function tGetChampion(){
+  const w=tGetW('gf');if(w==null)return null;
+  const m=TMATCH['gf'];
+  const winner=tGetName(w===0?m.p1:m.p2);
+  if(winner===tGetName(m.p2)){
+    const bw=tGetW('br');if(bw==null)return null;
+    const bm=TMATCH['br'];return tGetName(bw===0?bm.p1:bm.p2);
+  }
+  return winner;
+}
+function tMatchCard(mid){
+  const m=TMATCH[mid];
+  const n1=tGetName(m.p1)||'TBD';
+  const n2=tGetName(m.p2)||'TBD';
+  const r=tGetR(mid);const w=r!=null?r.w:null;
+  const ready=tIsReady(mid);
+  const UB=['u1','u2','u3','u4','u5','u6','u7','gf','br'];
+  const isUB=UB.includes(mid);
+  const champ=tGetChampion();
+  const cls1=w===0?(champ&&n1===champ?'bs-champ':'bs-ub'):(w===1?'bs-lose-ub':(n1==='TBD'?'bs-tbd':'bs-ub'));
+  const cls2=w===1?(champ&&n2===champ?'bs-champ':'bs-lb'):(w===0?'bs-lose-lb':(n2==='TBD'?'bs-tbd':'bs-lb'));
+  const bCls=mid==='gf'?' bm-gf':mid==='br'?' bm-br':'';
+  const clk=ready&&w==null?'class="b-slot '+cls1+' clickable"':'class="b-slot '+cls1+'"';
+  const clk2=ready&&w==null?'class="b-slot '+cls2+' clickable"':'class="b-slot '+cls2+'"';
+  const onclick=ready&&w==null?'onclick="openTMatch(\''+mid+'\')" style="cursor:pointer"':
+    (w!=null?'onclick="resetTMatch(\''+mid+'\')" title="クリックでリセット" style="cursor:pointer"':'');
+  const sc1=r?'<span class="b-score">'+r.s1+'</span>':'';
+  const sc2=r?'<span class="b-score">'+r.s2+'</span>':'';
+  return '<div class="b-match'+bCls+'" id="bm-'+mid+'" '+onclick+'>'
+    +'<div class="b-match-num">'+m.label+'</div>'
+    +'<div '+clk+' id="bp1-'+mid+'"><span class="b-pname">'+(w===0?'🏆 ':'')+esc(n1)+'</span>'+sc1+'</div>'
+    +'<div class="b-slot-sep"></div>'
+    +'<div '+clk2+' id="bp2-'+mid+'"><span class="b-pname">'+(w===1?'🏆 ':'')+esc(n2)+'</span>'+sc2+'</div>'
+    +'</div>';
+}
+function openTMatch(mid){
+  const m=TMATCH[mid];
+  tModalMatchId=mid;
+  const isBO5=['u7','lf','gf','br'].includes(mid);
+  document.getElementById('t-modal-title').textContent=m.label+' — 結果入力'+(isBO5?' (BO5)':' (BO3)');
+  document.getElementById('t-p1-name').textContent=tGetName(m.p1)||'?';
+  document.getElementById('t-p2-name').textContent=tGetName(m.p2)||'?';
+  const max=isBO5?3:2;
+  let html='';
+  // p1勝利パターン
+  for(let s2=0;s2<max;s2++){
+    html+='<button class="t-score-btn ts-p1" onclick="pickTourneyScore(0,'+max+','+s2+')">'+max+' ー '+s2+'</button>';
+  }
+  // p2勝利パターン
+  for(let s1=0;s1<max;s1++){
+    html+='<button class="t-score-btn ts-p2" onclick="pickTourneyScore(1,'+s1+','+max+')">'+s1+' ー '+max+'</button>';
+  }
+  document.getElementById('t-score-btns').innerHTML=html;
+  document.getElementById('t-modal').classList.remove('hidden');
+}
+function pickTourneyScore(winner,s1,s2){
+  if(tModalMatchId==null)return;
+  tourney.results[tModalMatchId]={w:winner,s1:s1,s2:s2};
+  document.getElementById('t-modal').classList.add('hidden');
+  tModalMatchId=null;
+  renderTournament();saveAll();
+}
+function pickTourneyWinner(w){pickTourneyScore(w,w===0?2:0,w===0?0:2);}
+function resetTMatch(mid){
+  if(!confirm(TMATCH[mid].label+' の結果をリセットしますか？'))return;
+  const deps=[];
+  function findDeps(id){Object.keys(TMATCH).forEach(function(k){if(k===id)return;const mm=TMATCH[k];if([mm.p1,mm.p2].some(function(s){return s&&s.mid===id;})&&!deps.includes(k)){deps.push(k);findDeps(k);}});}
+  findDeps(mid);
+  [mid].concat(deps).forEach(function(id){delete tourney.results[id];});
+  renderTournament();saveAll();
+}
+function drawBracketSVG(){
+  const container=document.getElementById('bracket-main');
+  if(!container)return;
+  let svg=document.getElementById('bracket-svg');
+  if(svg)svg.remove();
+  const W=container.offsetWidth,H=container.offsetHeight;
+  svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svg.id='bracket-svg';
+  svg.setAttribute('width',W);svg.setAttribute('height',H);
+  svg.style.cssText='position:absolute;top:0;left:0;pointer-events:none;overflow:visible;z-index:0;';
+  container.prepend(svg);
+  const cr=container.getBoundingClientRect();
+  function mid(el){
+    if(!el)return null;
+    const r=el.getBoundingClientRect();
+    return{x:r.left-cr.left,y:r.top-cr.top,w:r.width,h:r.height,
+      cx:r.left-cr.left+r.width/2,cy:r.top-cr.top+r.height/2,
+      right:r.right-cr.left,left:r.left-cr.left,
+      top:r.top-cr.top,bot:r.bottom-cr.top};
+  }
+  TCONNS.forEach(function(c){
+    const fromEl=document.getElementById('bm-'+c.f);
+    const toSlotEl=document.getElementById('b'+c.ts+'-'+c.t);
+    if(!fromEl||!toSlotEl)return;
+    const from=mid(fromEl);const to=mid(toSlotEl);
+    if(!from||!to)return;
+    // Source: right-center of from card
+    const x1=from.right,y1=from.cy;
+    // Dest: left-center of destination slot
+    const x2=to.left,y2=to.cy;
+    const r=tGetR(c.f);const w=r!=null?r.w:null;
+    // Is this connection active?
+    if(c.ft==='l')return; // 敗者導線は非表示
+    const active=(w!=null);
+    // Is this on the winner path?
+    const isWinPath=active&&(c.ft==='w'?(w===0&&c.ts==='p1'||w===1&&c.ts==='p2'):(w===0&&c.ts==='p2'||w===1&&c.ts==='p1'));
+    // Champion path detection
+    const champ=tGetChampion();
+    let champPath=false;
+    if(isWinPath&&champ){
+      const fm=TMATCH[c.f];const fr=tGetR(c.f);
+      if(fr!=null){const fw=fr.w;const fslot=c.ft==='w'?(fw===0?fm.p1:fm.p2):(fw===0?fm.p2:fm.p1);
+      champPath=tGetName(fslot)===champ;}
+    }
+    // Color and width
+    let color,width,dash='';
+    if(!active){color='rgba(255,255,255,0.12)';width=1;dash='4,4';}
+    else if(c.ft==='l'){color='rgba(198,40,40,0.6)';width=isWinPath?3:1.5;dash='3,3';}
+    else if(champPath){color='rgba(255,210,30,0.98)';width=4;}
+    else if(isWinPath){color='rgba(100,181,246,0.95)';width=3;}
+    else{color='rgba(255,255,255,0.25)';width=1.5;}
+    // Midpoint x for elbow
+    const mx=(x1+x2)/2;
+    const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+    const d='M'+x1+','+y1+' L'+mx+','+y1+' L'+mx+','+y2+' L'+x2+','+y2;
+    path.setAttribute('d',d);
+    path.setAttribute('stroke',color);
+    path.setAttribute('stroke-width',width);
+    path.setAttribute('fill','none');
+    path.setAttribute('stroke-linecap','round');
+    path.setAttribute('stroke-linejoin','round');
+    if(dash)path.setAttribute('stroke-dasharray',dash);
+    svg.appendChild(path);
+    // Draw arrow tip for active connections
+    if(active){
+      const arr=document.createElementNS('http://www.w3.org/2000/svg','polygon');
+      const ax=x2,ay=y2;
+      arr.setAttribute('points',(ax)+','+(ay)+' '+(ax-6)+','+(ay-3)+' '+(ax-6)+','+(ay+3));
+      arr.setAttribute('fill',color);
+      svg.appendChild(arr);
+    }
+  });
+}
+function renderTournament(){
+  const el=document.getElementById('tourney-section');
+  const champ=tGetChampion();
+  const needsBR=tNeedsBR();
+  let h='<div style="margin-bottom:16px">';
+  if(champ)h+='<div class="champion-banner"><div class="ch-title">🏆 CHAMPION 🏆</div><div class="ch-name">'+esc(champ)+'</div></div>';
+  h+='<div class="tourney-wrap" style="margin-bottom:14px">'
+   +'<div class="tourney-section-label">🎯 選手シード登録</div>'
+   +'<div class="tourney-players-grid">';
+  for(let i=0;i<8;i++){
+    h+='<div class="t-seed-box"><span class="t-seed-num">'+(i+1)+'.</span>'
+     +'<input class="t-seed-input" type="text" placeholder="選手名" maxlength="12"'
+     +' value="'+esc(tourney.seeds[i]||'')+'"'
+     +' oninput="tourney.seeds['+i+']=this.value;" onblur="renderTournament();saveAll();">'
+     +'</div>';
+  }
+  h+='</div><div class="tourney-toolbar">'
+   +'<button class="btn btn-gold btn-sm" onclick="autoSeedFromRanking()" style="background:linear-gradient(135deg,#2e7d32,#43a047);color:#fff;border:none">🏆 総合ランキングから自動配置</button>'
+   +'<button class="btn btn-danger btn-sm" onclick="resetAllTourney()">🗑 トーナメントリセット</button>'
+   +'<span class="tourney-status">― 実線=UB進出 / 破線=LB落下 / 太線=勝者ルート ―</span>'
+   +'</div></div>';
+  // Main bracket container (position:relative for SVG overlay)
+  h+='<div class="tourney-wrap" id="bracket-main">'
+   +'<div class="tourney-section-label">🔵 UPPER BRACKET</div>'
+   +'<div class="bracket-flow" style="margin-bottom:14px">'
+   +'<div class="b-col"><div class="b-col-hdr">ROUND 1</div>'
+   +tMatchCard('u1')+'<div style="height:24px"></div>'
+   +tMatchCard('u2')+'<div style="height:24px"></div>'
+   +tMatchCard('u3')+'<div style="height:24px"></div>'
+   +tMatchCard('u4')+'</div>'
+   +'<div class="b-col" style="padding-top:20px"><div class="b-col-hdr">SEMIFINALS</div>'
+   +tMatchCard('u5')+'<div style="height:80px"></div>'+tMatchCard('u6')+'</div>'
+   +'<div class="b-col" style="justify-content:center;padding-top:100px"><div class="b-col-hdr">UB FINALS</div>'
+   +tMatchCard('u7')+'</div>'
+   +'<div class="b-col" style="padding-top:100px"><div class="b-col-hdr">GRAND FINALS</div>'
+   +tMatchCard('gf')
+   +(needsBR?'<div class="b-col-hdr" style="margin-top:14px;color:rgba(255,215,0,.6)">BRACKET RESET</div>'+tMatchCard('br'):'')
+   +'</div></div>'
+   +'<div class="lb-divider"></div>'
+   +'<div class="tourney-section-label">🔴 LOWER BRACKET</div>'
+   +'<div class="bracket-flow">'
+   +'<div class="b-col"><div class="b-col-hdr">LB ROUND 1</div>'
+   +tMatchCard('l1')+'<div style="height:16px"></div>'+tMatchCard('l2')+'</div>'
+   +'<div class="b-col" style="padding-top:8px"><div class="b-col-hdr">LB ROUND 2</div>'
+   +tMatchCard('l3')+'<div style="height:16px"></div>'+tMatchCard('l4')+'</div>'
+   +'<div class="b-col" style="justify-content:center;padding-top:40px"><div class="b-col-hdr">LB SEMIFINALS</div>'
+   +tMatchCard('l5')+'</div>'
+   +'<div class="b-col" style="justify-content:center;padding-top:40px"><div class="b-col-hdr">LB FINALS</div>'
+   +tMatchCard('lf')+'</div>'
+   +'</div></div>';
+  h+='</div>';
+  el.innerHTML=h;
+  requestAnimationFrame(function(){drawBracketSVG();});
+}
+function resetAllTourney(){
+  if(!confirm('トーナメントをリセットしますか？'))return;
+  tourney.seeds=Array(8).fill('');tourney.results={};
+  renderTournament();saveAll();
+}
+
+/* RENDER ALL */
+function renderAll(){
+  renderGroupTabs();
+  renderGroupContent();
+  updateHd();
+}
+
+/* ═══════ GITHUB 同期 ═══════ */
+const GH_SK   = 'mahokaku_gh_1v';
+const GH_FILE = 'tourney_data.json';
+const GH_OWNER = 'sisanunyou2001-lang';
+const GH_REPO  = 'mahokaku1v';
+let ghSettings = { token: '' };
+let _ghPollTimer = null;
+
+function loadGhSettings(){
+  try{const r=localStorage.getItem(GH_SK);if(r)ghSettings={...ghSettings,...JSON.parse(r)};}catch{}
+}
+function saveGhSettings(){ localStorage.setItem(GH_SK,JSON.stringify(ghSettings)); }
+
+function onGhTokenInput(val){
+  clearTimeout(_ghDebounce);
+  _ghDebounce = setTimeout(()=>{
+    ghSettings.token = val.trim();
+    saveGhSettings();
+    if(ghSettings.token){ startGhPolling(); syncToGitHub(); }
+    else{ showSyncStatus('off'); }
+  },800);
+}
+let _ghDebounce = null;
+
+function showSyncStatus(status){
+  const el=document.getElementById('gh-sync-status');if(!el)return;
+  if(status==='syncing'){ el.textContent='🔄'; el.style.color='rgba(255,215,0,.8)'; el.title='同期中...'; }
+  else if(status==='ok'){ el.textContent='✓ GitHub同期済み'; el.style.color='#86efac'; el.title='同期済み'; setTimeout(()=>{ if(el.textContent==='✓ GitHub同期済み') el.textContent = ghSettings.token?'🔗':''; },3000); }
+  else if(status==='off'){ el.textContent=''; }
+  else{ el.textContent='⚠️'; el.style.color='#fca5a5'; el.title='同期エラー（トークン確認）'; }
+}
+function ghApiHeaders(){
+  return{'Authorization':'Bearer '+ghSettings.token,'Accept':'application/vnd.github+json','Content-Type':'application/json'};
+}
+async function getFileSha(){
+  if(!ghSettings.token) return null;
+  try{
+    const res=await fetch(`https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${GH_FILE}`,{headers:ghApiHeaders()});
+    if(res.status===404) return null;
+    if(!res.ok) return undefined;
+    return(await res.json()).sha;
+  }catch{return undefined;}
+}
+// データが実際に存在するか判定
+function stateHasData(s){
+  return (s.matches&&s.matches.length>0) ||
+         (s.tourney&&s.tourney.seeds&&s.tourney.seeds.some(t=>t&&t.trim())) ||
+         (s.tourney&&s.tourney.results&&Object.keys(s.tourney.results).length>0) ||
+         (s.rosters&&Object.keys(s.rosters).length>0);
+}
+async function syncToGitHub(){
+  if(!ghSettings.token) return;
+  const state=buildState();
+  // データが空の場合はGitHubへ書き込まない（空データで上書き防止）
+  if(!stateHasData(state)) return;
+  showSyncStatus('syncing');
+  const sha=await getFileSha();
+  if(sha===undefined){showSyncStatus('error');return;}
+  const content=btoa(unescape(encodeURIComponent(JSON.stringify(state,null,2))));
+  const body={message:'データ更新',content};
+  if(sha) body.sha=sha;
+  try{
+    const res=await fetch(`https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${GH_FILE}`,{method:'PUT',headers:ghApiHeaders(),body:JSON.stringify(body)});
+    showSyncStatus(res.ok?'ok':'error');
+  }catch{showSyncStatus('error');}
+}
+async function fetchFromGitHub(){
+  try{
+    let s;
+    if(ghSettings.token){
+      const res=await fetch(`https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${GH_FILE}`,{headers:ghApiHeaders()});
+      if(res.status===404) return false;
+      if(!res.ok) return false;
+      const data=await res.json();
+      s=JSON.parse(decodeURIComponent(escape(atob(data.content.replace(/\n/g,'')))));
+    } else {
+      // トークンなし：公開rawURLから直接取得（認証不要・閲覧専用）
+      const res=await fetch(`https://raw.githubusercontent.com/${GH_OWNER}/${GH_REPO}/main/${GH_FILE}?t=${Date.now()}`);
+      if(!res.ok) return false;
+      s=await res.json();
+    }
+    // リモートデータが空の場合はローカルを上書きしない
+    if(!stateHasData(s)) return false;
+    const localRaw=localStorage.getItem(SK);
+    if(localRaw){
+      const local=JSON.parse(localRaw);
+      // ローカルにデータがあり、かつリモートが古い場合は上書きしない
+      if(stateHasData(local)&&local.savedAt&&s.savedAt&&new Date(s.savedAt)<=new Date(local.savedAt)) return false;
+    }
+    applyState(s);
+    if(s.savedAt) updateLastSaved(s.savedAt);
+    localStorage.setItem(SK,JSON.stringify(s));
+    if(ghSettings.token) showSyncStatus('ok');
+    return true;
+  }catch{return false;}
+}
+function startGhPolling(){
+  if(_ghPollTimer) clearInterval(_ghPollTimer);
+  if(ghSettings.token) showSyncStatus('ok');
+  // トークンなしでも30秒ごとに最新データを取得（閲覧専用モード）
+  _ghPollTimer=setInterval(async()=>{
+    const updated=await fetchFromGitHub();
+    if(updated) renderAll();
+  },30000);
+}
+
+/* BOOT */
+window.addEventListener('DOMContentLoaded',async function(){
+  loadGhSettings();
+  if(!loadAll()){initGroups(3);defaultPool();activeRound=1;}
+  renderAll();
+  ['meta-year','meta-month'].forEach(function(id){
+    document.getElementById(id).addEventListener('change',saveAll);
+  });
+  const tokenEl=document.getElementById('gh-token-inline');
+  if(tokenEl&&ghSettings.token) tokenEl.value=ghSettings.token;
+  // トークン有無に関わらず起動時にGitHubから最新データを取得
+  const updated=await fetchFromGitHub();
+  if(updated) renderAll();
+  startGhPolling();
+});
+</script>
+</body>
+</html>
+               
